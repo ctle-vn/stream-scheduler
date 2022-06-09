@@ -271,55 +271,57 @@ contract StreamSchedulerTest is SuperfluidTester {
     }
 
     // Test executeCreateStream
-    // function testExecuteCreateStream() public {
-    //     vm.startPrank(admin);
-    //     sf.cfaLib.createFlow(alice, superToken, 1000);
-    //     vm.stopPrank();
-    // vm.expectEmit(true, true, false, true);
-    // emit ExecuteCreateStream(
-    //     address(this),
-    //     alice,
-    //     superToken,
-    //     startTime,
-    //     1000,
-    //     startTime + 3600,
-    //     bytes("0x00")
-    // );
-    // vm.expectCall(
-    //     address(streamScheduler),
-    //     abi.encodeCall(
-    //         streamScheduler.executeCreateStream,
-    //         (
-    //             alice,
-    //             superToken,
-    //             startTime,
-    //             1000,
-    //             startTime + 3600,
-    //             bytes("0x00")
-    //         )
-    //     )
-    // );
-    // streamScheduler.executeCreateStream(
-    //     alice,
-    //     superToken,
-    //     startTime,
-    //     1000,
-    //     startTime + 3600,
-    //     bytes("0x00")
-    // );
-    // assertTrue(
-    //     streamScheduler.getStreamOrderHashesByValue(
-    //         keccak256(
-    //             abi.encodePacked(
-    //                 address(this),
-    //                 alice,
-    //                 superToken,
-    //                 startTime,
-    //                 startTime + 3600
-    //             )
-    //         )
-    //     )
-    // );
-    // assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
-    // }
+    function testExecuteCreateStream() public {
+        // Mock create flow call.
+        vm.startPrank(admin);
+        sf.cfaLib.createFlow(alice, superToken, 1000);
+        vm.stopPrank();
+
+        vm.expectEmit(true, true, false, true);
+        emit ExecuteCreateStream(
+            address(this),
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectCall(
+            address(streamScheduler),
+            abi.encodeCall(
+                streamScheduler.executeCreateStream,
+                (
+                    alice,
+                    superToken,
+                    startTime,
+                    1000,
+                    startTime + 3600,
+                    bytes("0x00")
+                )
+            )
+        );
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(
+            streamScheduler.getStreamOrderHashesByValue(
+                keccak256(
+                    abi.encodePacked(
+                        address(this),
+                        alice,
+                        superToken,
+                        startTime + 1,
+                        startTime + 3600
+                    )
+                )
+            )
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+    }
 }
