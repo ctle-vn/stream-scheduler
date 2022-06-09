@@ -197,15 +197,14 @@ contract StreamScheduler {
             "Stream time window is invalid."
         );
         // Create a flow accordingly as per the stream order data.
-        // cfaV1.host.callAgreement(
-        //     cfaV1.cfa,
-        //     abi.encodeCall(
-        //         cfaV1.cfa.createFlowByOperator,
-        //         (superToken, msg.sender, receiver, flowRate, userData)
-        //     ),
-        //     new bytes(0)
-        // );
-        // cfa.createFlow(superToken, receiver, flowRate, userData);
+        cfaV1.host.callAgreement(
+            cfaV1.cfa,
+            abi.encodeCall(
+                cfaV1.cfa.createFlowByOperator,
+                (superToken, msg.sender, receiver, flowRate, userData)
+            ),
+            new bytes(0)
+        );
         // If there are no further operations (endTime isn’t specified) then the data should be deleted.
         if (endTime == 0) {
             delete streamOrderHashes[
@@ -265,14 +264,14 @@ contract StreamScheduler {
             "Stream order does not exist."
         );
         // and will update the flowRate of the stream to match the stream order data.
-        // cfaV1.host.callAgreement(
-        //     cfaV1.cfa,
-        //     abi.encodeCall(
-        //         cfaV1.cfa.updateFlowByOperator,
-        //         (superToken, msg.sender, receiver, flowRate, userData)
-        //     ),
-        //     new bytes(0)
-        // );
+        cfaV1.host.callAgreement(
+            cfaV1.cfa,
+            abi.encodeCall(
+                cfaV1.cfa.updateFlowByOperator,
+                (superToken, msg.sender, receiver, flowRate, userData)
+            ),
+            new bytes(0)
+        );
         emit ExecuteUpdateStream(
             receiver,
             msg.sender,
@@ -307,14 +306,14 @@ contract StreamScheduler {
             endTime == 0 || endTime <= block.timestamp, // End time is in the past
             "Stream order end time is in the past."
         );
-        // cfaV1.host.callAgreement(
-        //     cfaV1.cfa,
-        //     abi.encodeCall(
-        //         cfaV1.cfa.deleteFlowByOperator,
-        //         (superToken, msg.sender, receiver, userData)
-        //     ),
-        //     new bytes(0)
-        // );
+        cfaV1.host.callAgreement(
+            cfaV1.cfa,
+            abi.encodeCall(
+                cfaV1.cfa.deleteFlowByOperator,
+                (superToken, msg.sender, receiver, userData)
+            ),
+            new bytes(0)
+        );
         delete streamOrderHashes[
             keccak256(
                 abi.encodePacked(
