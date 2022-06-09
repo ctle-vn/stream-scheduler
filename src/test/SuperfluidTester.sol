@@ -23,8 +23,10 @@ contract SuperfluidTester is Test {
     /// @dev Everything you need from framework is in it. See `README.md` for more.
     SuperfluidFrameworkDeployer internal immutable sfDeployer;
     SuperfluidFrameworkDeployer.Framework internal sf;
+
     ERC20PresetMinterPauser internal token;
     SuperToken internal superToken;
+
     uint256 private _expectedTotalSupply = 0;
 
     constructor(uint8 nTesters) {
@@ -33,7 +35,6 @@ contract SuperfluidTester is Test {
         // everything will be deployed as if `admin` was the message sender of each
         vm.startPrank(admin);
         // Deploy ERC1820Registry by 'etching' the bytecode into the address
-        // mother of god this can not be real
         vm.etch(ERC1820RegistryCompiled.at, ERC1820RegistryCompiled.bin);
         sfDeployer = new SuperfluidFrameworkDeployer();
         sf = sfDeployer.getFramework();

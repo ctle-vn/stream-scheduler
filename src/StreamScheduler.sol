@@ -1,21 +1,30 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.8.0;
 
-import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
+import { ISuperToken, ISuperfluid } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 import { IConstantFlowAgreementV1 } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IConstantFlowAgreementV1.sol";
+import { CFAv1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/CFAv1Library.sol";
 
 /**
  * @title Stream scheduler contract
  * @author Superfluid
  */
 contract StreamScheduler {
-    IConstantFlowAgreementV1 public cfa;
+    IConstantFlowAgreementV1 public _cfa;
+    ISuperfluid public _host; // host
     mapping(bytes32 => bool) public streamOrderHashes;
     uint256 public streamOrderLength;
 
-    constructor(IConstantFlowAgreementV1 _cfa) {
-        cfa = _cfa;
+    using CFAv1Library for CFAv1Library.InitData;
+    CFAv1Library.InitData public cfaV1; //initialize cfaV1 variable
+
+    constructor(IConstantFlowAgreementV1 cfa, ISuperfluid host) {
+        _cfa = cfa;
+        _host = host;
         streamOrderLength = 0;
+
+        //initialize InitData struct, and set equal to cfaV1
+        cfaV1 = CFAv1Library.InitData(host, cfa);
     }
 
     /**
@@ -188,7 +197,15 @@ contract StreamScheduler {
             "Stream time window is invalid."
         );
         // Create a flow accordingly as per the stream order data.
-        cfa.createFlow(superToken, receiver, flowRate, userData);
+        // cfaV1.host.callAgreement(
+        //     cfaV1.cfa,
+        //     abi.encodeCall(
+        //         cfaV1.cfa.createFlowByOperator,
+        //         (superToken, msg.sender, receiver, flowRate, userData)
+        //     ),
+        //     new bytes(0)
+        // );
+        // cfa.createFlow(superToken, receiver, flowRate, userData);
         // If there are no further operations (endTime isn’t specified) then the data should be deleted.
         if (endTime == 0) {
             delete streamOrderHashes[
@@ -248,7 +265,14 @@ contract StreamScheduler {
             "Stream order does not exist."
         );
         // and will update the flowRate of the stream to match the stream order data.
-        cfa.updateFlow(superToken, receiver, flowRate, userData);
+        // cfaV1.host.callAgreement(
+        //     cfaV1.cfa,
+        //     abi.encodeCall(
+        //         cfaV1.cfa.updateFlowByOperator,
+        //         (superToken, msg.sender, receiver, flowRate, userData)
+        //     ),
+        //     new bytes(0)
+        // );
         emit ExecuteUpdateStream(
             receiver,
             msg.sender,
@@ -283,7 +307,14 @@ contract StreamScheduler {
             endTime == 0 || endTime <= block.timestamp, // End time is in the past
             "Stream order end time is in the past."
         );
-        cfa.deleteFlow(superToken, msg.sender, receiver, userData);
+        // cfaV1.host.callAgreement(
+        //     cfaV1.cfa,
+        //     abi.encodeCall(
+        //         cfaV1.cfa.deleteFlowByOperator,
+        //         (superToken, msg.sender, receiver, userData)
+        //     ),
+        //     new bytes(0)
+        // );
         delete streamOrderHashes[
             keccak256(
                 abi.encodePacked(
