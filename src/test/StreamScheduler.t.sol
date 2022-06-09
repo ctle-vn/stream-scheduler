@@ -19,44 +19,34 @@ contract StreamSchedulerTest is SuperfluidTester {
         uint256 endTime,
         bytes userData
     );
+    event ExecuteCreateStream(
+        address receiver,
+        address sender,
+        ISuperToken superToken,
+        uint256 startTime,
+        int96 flowRate,
+        uint256 endTime,
+        bytes userData
+    );
+
     /// @dev This is required by solidity for using the CFAv1Library in the tester
     using CFAv1Library for CFAv1Library.InitData;
 
     /// @dev Example Stream Scheduler to test
-    StreamScheduler internal streamScheduler;
+    StreamScheduler internal streamScheduler = new StreamScheduler(sf.cfa);
 
     /// @dev Constants for Testing
-    address internal constant admin = address(1);
-    address internal constant someOtherPerson = address(2);
     uint256 internal startTime = block.timestamp + 1;
     uint256 testNumber;
-    ISuperToken token;
 
-    constructor() SuperfluidTester(admin) {}
-
-    function setUp() public {
-        streamScheduler = new StreamScheduler(sf.cfa);
-        // access SuperTokenFactory
-        sf.superTokenFactory;
-
-        // create pure super token contract
-        token = ISuperToken(
-            sf.superTokenFactory.createSuperTokenLogic(sf.host)
-        );
-        token.initialize(
-            IERC20(0x0000000000000000000000000000000000000000), // no underlying/wrapped token
-            18, // shouldn't matter if there's no wrapped token
-            "name",
-            "FAKE"
-        );
-    }
+    constructor() SuperfluidTester(3) {}
 
     function testCreateStreamOrderWithExplicitTimeWindow() public {
         vm.expectEmit(true, true, false, true);
         emit CreateStreamOrder(
-            address(someOtherPerson),
+            alice,
             address(this),
-            token,
+            superToken,
             startTime,
             1000,
             startTime + 3600,
@@ -67,8 +57,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             abi.encodeCall(
                 streamScheduler.createStreamOrder,
                 (
-                    someOtherPerson,
-                    token,
+                    alice,
+                    superToken,
                     startTime,
                     1000,
                     startTime + 3600,
@@ -77,8 +67,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             )
         );
         streamScheduler.createStreamOrder(
-            someOtherPerson,
-            token,
+            alice,
+            superToken,
             startTime,
             1000,
             startTime + 3600,
@@ -89,8 +79,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                 keccak256(
                     abi.encodePacked(
                         address(this),
-                        address(someOtherPerson),
-                        token,
+                        alice,
+                        superToken,
                         startTime,
                         startTime + 3600
                     )
@@ -103,9 +93,9 @@ contract StreamSchedulerTest is SuperfluidTester {
     function testCreateStreamOrderWithZeroTimes() public {
         vm.expectEmit(true, true, false, true);
         emit CreateStreamOrder(
-            address(someOtherPerson),
+            alice,
             address(this),
-            token,
+            superToken,
             uint256(0),
             1000,
             startTime + 3600,
@@ -116,8 +106,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             abi.encodeCall(
                 streamScheduler.createStreamOrder,
                 (
-                    someOtherPerson,
-                    token,
+                    alice,
+                    superToken,
                     uint256(0),
                     1000,
                     startTime + 3600,
@@ -126,8 +116,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             )
         );
         streamScheduler.createStreamOrder(
-            someOtherPerson,
-            token,
+            alice,
+            superToken,
             uint256(0),
             1000,
             startTime + 3600,
@@ -138,8 +128,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                 keccak256(
                     abi.encodePacked(
                         address(this),
-                        address(someOtherPerson),
-                        token,
+                        alice,
+                        superToken,
                         uint256(0),
                         startTime + 3600
                     )
@@ -147,8 +137,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             )
         );
         streamScheduler.createStreamOrder(
-            someOtherPerson,
-            token,
+            alice,
+            superToken,
             startTime,
             1000,
             uint256(0),
@@ -159,8 +149,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                 keccak256(
                     abi.encodePacked(
                         address(this),
-                        address(someOtherPerson),
-                        token,
+                        alice,
+                        superToken,
                         startTime,
                         uint256(0)
                     )
@@ -173,9 +163,9 @@ contract StreamSchedulerTest is SuperfluidTester {
     function testFailedCreateStreamOrderWhenDuplicateStreamOrder() public {
         vm.expectEmit(true, true, false, true);
         emit CreateStreamOrder(
-            address(someOtherPerson),
+            alice,
             address(this),
-            token,
+            superToken,
             uint256(0),
             1000,
             startTime + 3600,
@@ -186,8 +176,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             abi.encodeCall(
                 streamScheduler.createStreamOrder,
                 (
-                    someOtherPerson,
-                    token,
+                    alice,
+                    superToken,
                     uint256(0),
                     1000,
                     startTime + 3600,
@@ -196,8 +186,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             )
         );
         streamScheduler.createStreamOrder(
-            someOtherPerson,
-            token,
+            alice,
+            superToken,
             uint256(0),
             1000,
             startTime + 3600,
@@ -208,8 +198,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                 keccak256(
                     abi.encodePacked(
                         address(this),
-                        address(someOtherPerson),
-                        token,
+                        alice,
+                        superToken,
                         uint256(0),
                         startTime + 3600
                     )
@@ -219,8 +209,8 @@ contract StreamSchedulerTest is SuperfluidTester {
         // Expect revert on when duplicate stream order is attempted.
         vm.expectRevert(bytes("Stream order already exists"));
         streamScheduler.createStreamOrder(
-            someOtherPerson,
-            token,
+            alice,
+            superToken,
             uint256(0),
             1000,
             startTime + 3600,
@@ -234,7 +224,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         vm.expectRevert(bytes("Receiver cannot be the same as sender"));
         streamScheduler.createStreamOrder(
             address(this),
-            token,
+            superToken,
             startTime,
             1000,
             startTime + 3600,
@@ -247,8 +237,8 @@ contract StreamSchedulerTest is SuperfluidTester {
         // Should fail since start time is in past.
         vm.expectRevert(bytes("Stream time window is invalid"));
         streamScheduler.createStreamOrder(
-            address(someOtherPerson),
-            token,
+            alice,
+            superToken,
             startTime - 100000,
             1000,
             startTime + 3600,
@@ -259,8 +249,8 @@ contract StreamSchedulerTest is SuperfluidTester {
         // Should fail since start and end are both 0.
         vm.expectRevert(bytes("Stream time window is invalid"));
         streamScheduler.createStreamOrder(
-            address(someOtherPerson),
-            token,
+            alice,
+            superToken,
             0,
             1000,
             0,
@@ -270,8 +260,8 @@ contract StreamSchedulerTest is SuperfluidTester {
 
         // Should fail since start time is exactly block.timestamp.
         streamScheduler.createStreamOrder(
-            address(someOtherPerson),
-            token,
+            alice,
+            superToken,
             block.timestamp,
             1000,
             startTime + 3600,
@@ -279,4 +269,57 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
+
+    // Test executeCreateStream
+    // function testExecuteCreateStream() public {
+    //     vm.startPrank(admin);
+    //     sf.cfaLib.createFlow(alice, superToken, 1000);
+    //     vm.stopPrank();
+    // vm.expectEmit(true, true, false, true);
+    // emit ExecuteCreateStream(
+    //     address(this),
+    //     alice,
+    //     superToken,
+    //     startTime,
+    //     1000,
+    //     startTime + 3600,
+    //     bytes("0x00")
+    // );
+    // vm.expectCall(
+    //     address(streamScheduler),
+    //     abi.encodeCall(
+    //         streamScheduler.executeCreateStream,
+    //         (
+    //             alice,
+    //             superToken,
+    //             startTime,
+    //             1000,
+    //             startTime + 3600,
+    //             bytes("0x00")
+    //         )
+    //     )
+    // );
+    // streamScheduler.executeCreateStream(
+    //     alice,
+    //     superToken,
+    //     startTime,
+    //     1000,
+    //     startTime + 3600,
+    //     bytes("0x00")
+    // );
+    // assertTrue(
+    //     streamScheduler.getStreamOrderHashesByValue(
+    //         keccak256(
+    //             abi.encodePacked(
+    //                 address(this),
+    //                 alice,
+    //                 superToken,
+    //                 startTime,
+    //                 startTime + 3600
+    //             )
+    //         )
+    //     )
+    // );
+    // assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+    // }
 }
