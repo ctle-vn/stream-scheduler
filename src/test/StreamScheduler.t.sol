@@ -7,7 +7,7 @@ import { StreamScheduler } from "../StreamScheduler.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Example Super Token Test
-/// @author jtriley.eth
+/// @author ctle-vn, SuperfluidTester taken from jtriley.eth
 /// @notice For demonstration only. You can delete this file.
 contract StreamSchedulerTest is SuperfluidTester {
     event CreateStreamOrder(
@@ -170,6 +170,65 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 2);
     }
 
+    function testFailedCreateStreamOrderWhenDuplicateStreamOrder() public {
+        vm.expectEmit(true, true, false, true);
+        emit CreateStreamOrder(
+            address(someOtherPerson),
+            address(this),
+            token,
+            uint256(0),
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectCall(
+            address(streamScheduler),
+            abi.encodeCall(
+                streamScheduler.createStreamOrder,
+                (
+                    someOtherPerson,
+                    token,
+                    uint256(0),
+                    1000,
+                    startTime + 3600,
+                    bytes("0x00")
+                )
+            )
+        );
+        streamScheduler.createStreamOrder(
+            someOtherPerson,
+            token,
+            uint256(0),
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(
+            streamScheduler.getStreamOrderHashesByValue(
+                keccak256(
+                    abi.encodePacked(
+                        address(this),
+                        address(someOtherPerson),
+                        token,
+                        uint256(0),
+                        startTime + 3600
+                    )
+                )
+            )
+        );
+        // Expect revert on when duplicate stream order is attempted.
+        vm.expectRevert(bytes("Stream order already exists"));
+        streamScheduler.createStreamOrder(
+            someOtherPerson,
+            token,
+            uint256(0),
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+    }
+
     function testFailedCreateStreamOrderWhenSenderSameAsReceiver() public {
         // Expect revert on receiver same as sender.
         vm.expectRevert(bytes("Receiver cannot be the same as sender"));
@@ -185,12 +244,35 @@ contract StreamSchedulerTest is SuperfluidTester {
     }
 
     function testFailedCreateStreamOrderWhenTimeWindowInvalid() public {
-        // Expect revert on receiver same as sender.
+        // Should fail since start time is in past.
         vm.expectRevert(bytes("Stream time window is invalid"));
         streamScheduler.createStreamOrder(
             address(someOtherPerson),
             token,
-            startTime - 1,
+            startTime - 100000,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
+
+        // Should fail since start and end are both 0.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.createStreamOrder(
+            address(someOtherPerson),
+            token,
+            0,
+            1000,
+            0,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
+
+        // Should fail since start time is exactly block.timestamp.
+        streamScheduler.createStreamOrder(
+            address(someOtherPerson),
+            token,
+            block.timestamp,
             1000,
             startTime + 3600,
             bytes("0x00")
