@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
+import { FlowOperatorDefinitions } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 import { SuperfluidTester, Superfluid, ConstantFlowAgreementV1, CFAv1Library, SuperTokenFactory } from "../test/SuperfluidTester.sol";
 import { StreamScheduler } from "../StreamScheduler.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -271,57 +272,148 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 
+    function testFailedExecuteCreateStreamWhenOrderDNE() public {
+        // Expect revert on when order does not exist.
+        vm.expectRevert(bytes("Stream order does not exist"));
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
+    }
+
+    function testFailedExecuteCreateStreamWhenTimeWindowInvalid() public {
+        // Expect revert on when start time is in past.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+
+        // Expect revert on when start and end are both 0.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            0,
+            1000,
+            0,
+            bytes("0x00")
+        );
+
+        // Expect revert on when start time is exactly block.timestamp.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            block.timestamp,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+
+        // Expect revert on when start time is after end time.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime + 3600,
+            1000,
+            startTime,
+            bytes("0x00")
+        );
+
+        // Expect revert on when start time is after end time.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime + 3600,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+    }
+
     // Test executeCreateStream
-    // function testExecuteCreateStream() public {
-    // Mock create flow call.
-    // vm.startPrank(admin);
-    // sf.cfaLib.createFlow(alice, superToken, 1000);
-    // vm.stopPrank();
-    // vm.expectEmit(true, true, false, true);
-    // emit ExecuteCreateStream(
-    //     address(this),
-    //     alice,
-    //     superToken,
-    //     startTime,
-    //     1000,
-    //     startTime + 3600,
-    //     bytes("0x00")
-    // );
-    // vm.expectCall(
-    //     address(streamScheduler),
-    //     abi.encodeCall(
-    //         streamScheduler.executeCreateStream,
-    //         (
-    //             alice,
-    //             superToken,
-    //             startTime,
-    //             1000,
-    //             startTime + 3600,
-    //             bytes("0x00")
-    //         )
-    //     )
-    // );
-    // streamScheduler.executeCreateStream(
-    //     alice,
-    //     superToken,
-    //     startTime,
-    //     1000,
-    //     startTime + 3600,
-    //     bytes("0x00")
-    // );
-    // assertTrue(
-    //     streamScheduler.getStreamOrderHashesByValue(
-    //         keccak256(
-    //             abi.encodePacked(
-    //                 address(this),
-    //                 alice,
-    //                 superToken,
-    //                 startTime + 1,
-    //                 startTime + 3600
-    //             )
-    //         )
-    //     )
-    // );
-    // assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
-    // }
+    function testExecuteCreateStream() public {
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+
+        sf.host.callAgreement(
+            sf.cfa,
+            abi.encodeCall(
+                sf.cfa.updateFlowOperatorPermissions,
+                (
+                    superToken,
+                    address(streamScheduler),
+                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_CREATE,
+                    1000,
+                    new bytes(0)
+                )
+            ),
+            new bytes(0)
+        );
+
+        vm.expectEmit(true, true, false, true);
+        emit ExecuteCreateStream(
+            address(this),
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectCall(
+            address(streamScheduler),
+            abi.encodeCall(
+                streamScheduler.executeCreateStream,
+                (
+                    alice,
+                    superToken,
+                    startTime,
+                    1000,
+                    startTime + 3600,
+                    bytes("0x00")
+                )
+            )
+        );
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        // assertTrue(
+        //     streamScheduler.getStreamOrderHashesByValue(
+        //         keccak256(
+        //             abi.encodePacked(
+        //                 address(this),
+        //                 alice,
+        //                 superToken,
+        //                 startTime + 1,
+        //                 startTime + 3600
+        //             )
+        //         )
+        //     )
+        // );
+        // assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+    }
 }

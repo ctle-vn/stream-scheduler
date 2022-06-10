@@ -22,6 +22,9 @@ contract StreamScheduler {
         _cfa = cfa;
         _host = host;
         streamOrderLength = 0;
+        // Check cfa and host address to be non zero.
+        assert(address(_host) != address(0));
+        assert(address(_cfa) != address(0));
 
         //initialize InitData struct, and set equal to cfaV1
         cfaV1 = CFAv1Library.InitData(host, cfa);
@@ -196,12 +199,29 @@ contract StreamScheduler {
                 (startTime != 0 && endTime == 0),
             "Stream time window is invalid."
         );
+
+        // Check if hash exists first.
+        require(
+            streamOrderHashes[
+                keccak256(
+                    abi.encodePacked(
+                        msg.sender,
+                        receiver,
+                        superToken,
+                        startTime,
+                        endTime
+                    )
+                )
+            ],
+            "Stream order does not exist."
+        );
+
         // Create a flow accordingly as per the stream order data.
         cfaV1.host.callAgreement(
             cfaV1.cfa,
             abi.encodeCall(
                 cfaV1.cfa.createFlowByOperator,
-                (superToken, msg.sender, receiver, flowRate, userData)
+                (superToken, msg.sender, receiver, flowRate, new bytes(0))
             ),
             new bytes(0)
         );
