@@ -209,7 +209,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 2);
     }
 
-    function testFailedCreateStreamOrderWhenDuplicateStreamOrder() public {
+    function testCannotCreateStreamOrderWhenDuplicateStreamOrder() public {
         vm.expectEmit(true, true, false, true);
         emit CreateStreamOrder(
             alice,
@@ -256,7 +256,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             )
         );
         // Expect revert on when duplicate stream order is attempted.
-        vm.expectRevert(bytes("Stream order already exists"));
+        vm.expectRevert(bytes("Stream order already exists."));
         streamScheduler.createStreamOrder(
             alice,
             superToken,
@@ -268,9 +268,9 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
     }
 
-    function testFailedCreateStreamOrderWhenSenderSameAsReceiver() public {
+    function testCannotCreateStreamOrderWhenSenderSameAsReceiver() public {
         // Expect revert on receiver same as sender.
-        vm.expectRevert(bytes("Receiver cannot be the same as sender"));
+        vm.expectRevert(bytes("Receiver cannot be the same as sender."));
         streamScheduler.createStreamOrder(
             address(this),
             superToken,
@@ -282,13 +282,13 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 
-    function testFailedCreateStreamOrderWhenTimeWindowInvalid() public {
+    function testCannotCreateStreamOrderWhenTimeWindowInvalid() public {
         // Should fail since start time is in past.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.createStreamOrder(
             alice,
             superToken,
-            startTime - 100000,
+            startTime - 1,
             1000,
             startTime + 3600,
             bytes("0x00")
@@ -296,7 +296,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
 
         // Should fail since start and end are both 0.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.createStreamOrder(
             alice,
             superToken,
@@ -308,6 +308,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
 
         // Should fail since start time is exactly block.timestamp.
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.createStreamOrder(
             alice,
             superToken,
@@ -319,9 +320,9 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 
-    function testFailedExecuteCreateStreamWhenOrderDNE() public {
+    function testCannotExecuteCreateStreamWhenOrderDNE() public {
         // Expect revert on when order does not exist.
-        vm.expectRevert(bytes("Stream order does not exist"));
+        vm.expectRevert(bytes("Stream order does not exist."));
         streamScheduler.executeCreateStream(
             alice,
             superToken,
@@ -333,20 +334,20 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 
-    function testFailedExecuteCreateStreamWhenTimeWindowInvalid() public {
+    function testCannotExecuteCreateStreamWhenTimeWindowInvalid() public {
         // Expect revert on when start time is in past.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.createStreamOrder(
             alice,
             superToken,
-            startTime,
+            startTime - 1,
             1000,
             startTime + 3600,
             bytes("0x00")
         );
 
         // Expect revert on when start and end are both 0.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.executeCreateStream(
             alice,
             superToken,
@@ -357,7 +358,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
 
         // Expect revert on when start time is exactly block.timestamp.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.executeCreateStream(
             alice,
             superToken,
@@ -368,7 +369,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
 
         // Expect revert on when start time is after end time.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.executeCreateStream(
             alice,
             superToken,
@@ -379,7 +380,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
 
         // Expect revert on when start time is after end time.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.executeCreateStream(
             alice,
             superToken,
@@ -390,20 +391,20 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
     }
 
-    function testFailedExecuteUpdateStreamWhenTimeWindowInvalid() public {
+    function testCannotExecuteUpdateStreamWhenTimeWindowInvalid() public {
         // Expect revert on when start time is in past.
-        vm.expectRevert(bytes("Stream time window is invalid"));
-        streamScheduler.createStreamOrder(
+        vm.expectRevert(bytes("Stream time window is invalid."));
+        streamScheduler.executeUpdateStream(
             alice,
             superToken,
-            startTime,
+            startTime - 1,
             1000,
             startTime + 3600,
             bytes("0x00")
         );
 
         // Expect revert on when start and end are both 0.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.executeUpdateStream(
             alice,
             superToken,
@@ -414,7 +415,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
 
         // Expect revert on when start time is exactly block.timestamp.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.executeUpdateStream(
             alice,
             superToken,
@@ -425,7 +426,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
 
         // Expect revert on when start time is after end time.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.executeUpdateStream(
             alice,
             superToken,
@@ -435,14 +436,14 @@ contract StreamSchedulerTest is SuperfluidTester {
             bytes("0x00")
         );
 
-        // Expect revert on when start time is after end time.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        // Expect revert on when start time equal to end time.
+        vm.expectRevert(bytes("Stream time window is invalid."));
         streamScheduler.executeUpdateStream(
             alice,
             superToken,
-            startTime + 3600,
+            startTime,
             1000,
-            startTime + 3600,
+            startTime,
             bytes("0x00")
         );
     }
@@ -500,20 +501,20 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 
-    function testFailedExecuteDeleteStreamWhenEndTimeInvalid() public {
+    function testCannotExecuteDeleteStreamWhenEndTimeInvalid() public {
         // Expect revert on when end time is in past.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream order end time is in the past."));
         streamScheduler.executeDeleteStream(
             alice,
             superToken,
             startTime,
             1000,
-            startTime - 3600,
+            block.timestamp - 1,
             bytes("0x00")
         );
 
         // Expect revert on when end time is exactly block.timestamp.
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream order end time is in the past."));
         streamScheduler.executeDeleteStream(
             alice,
             superToken,
@@ -524,7 +525,7 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
 
         // Expect revert on when end time is 0
-        vm.expectRevert(bytes("Stream time window is invalid"));
+        vm.expectRevert(bytes("Stream order end time is in the past."));
         streamScheduler.executeDeleteStream(
             alice,
             superToken,
@@ -535,7 +536,21 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
     }
 
-    function testFailedExecuteUpdateStreamDueToNoPermissions() public {
+    function testCannotExecuteUpdateStreamDueToNoPermissions() public {
+        host.callAgreement(
+            cfa,
+            abi.encodeCall(
+                cfa.updateFlowOperatorPermissions,
+                (
+                    superToken,
+                    address(streamScheduler),
+                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_CREATE,
+                    1000,
+                    new bytes(0)
+                )
+            ),
+            new bytes(0)
+        );
         streamScheduler.createStreamOrder(
             alice,
             superToken,
@@ -552,30 +567,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime + 3600,
             bytes("0x00")
         );
-        vm.expectEmit(true, true, false, true);
-        emit ExecuteUpdateStream(
-            alice,
-            address(this),
-            superToken,
-            startTime,
-            1000,
-            startTime + 3600,
-            bytes("0x00")
-        );
-        vm.expectCall(
-            address(streamScheduler),
-            abi.encodeCall(
-                streamScheduler.executeUpdateStream,
-                (
-                    alice,
-                    superToken,
-                    startTime,
-                    1000,
-                    startTime + 3600,
-                    bytes("0x00")
-                )
-            )
-        );
+        vm.expectRevert(bytes("E_NO_OPERATOR_UPDATE_FLOW"));
         streamScheduler.executeUpdateStream(
             alice,
             superToken,
@@ -584,20 +576,6 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime + 3600,
             bytes("0x00")
         );
-        assertTrue(
-            streamScheduler.getStreamOrderHashesByValue(
-                keccak256(
-                    abi.encodePacked(
-                        address(this),
-                        alice,
-                        superToken,
-                        startTime,
-                        startTime + 3600
-                    )
-                )
-            )
-        );
-        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
     }
 
     function testExecuteCreateStream() public {
@@ -845,6 +823,19 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime,
             1000,
             startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
+    }
+
+    function testCannotExecuteDeleteStreamInvalidEndTime() public {
+        vm.expectRevert(bytes("Stream order end time is in the past."));
+        streamScheduler.executeDeleteStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime - 1,
             bytes("0x00")
         );
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);

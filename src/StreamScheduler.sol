@@ -330,7 +330,7 @@ contract StreamScheduler {
         // Check if the endTime is in the past. Close the stream. Delete the stream order data.
         require(
             // solhint-disable-next-line not-rely-on-time
-            endTime == 0 || endTime > block.timestamp, // End time is in the past
+            endTime > block.timestamp, // End time is in the past
             "Stream order end time is in the past."
         );
         cfaV1.host.callAgreement(
