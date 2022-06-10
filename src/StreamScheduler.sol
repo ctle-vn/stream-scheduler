@@ -333,6 +333,21 @@ contract StreamScheduler {
             endTime > block.timestamp, // End time is in the past
             "Stream order end time is in the past."
         );
+
+        require(
+            streamOrderHashes[
+                keccak256(
+                    abi.encodePacked(
+                        msg.sender,
+                        receiver,
+                        superToken,
+                        startTime,
+                        endTime
+                    )
+                )
+            ],
+            "Stream order does not exist."
+        );
         cfaV1.host.callAgreement(
             cfaV1.cfa,
             abi.encodeCall(

@@ -334,6 +334,53 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 
+    function testCannotExecuteDeleteStreamWhenOrderDNE() public {
+        // Expect revert on when order does not exist.
+        vm.expectRevert(bytes("Stream order does not exist."));
+        streamScheduler.executeDeleteStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
+    }
+
+    function testCannotExecuteUpdateStreamWhenOrderDNE() public {
+        vm.expectRevert(bytes("Stream order does not exist."));
+        streamScheduler.executeUpdateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
+    }
+
+    function testCannotExecuteCreateStreamWithInvalidPermissions() public {
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectRevert(bytes("CFA: E_NO_OPERATOR_CREATE_FLOW"));
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+    }
+
     function testCannotExecuteCreateStreamWhenTimeWindowInvalid() public {
         // Expect revert on when start time is in past.
         vm.expectRevert(bytes("Stream time window is invalid."));
