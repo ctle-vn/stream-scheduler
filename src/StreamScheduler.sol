@@ -295,7 +295,7 @@ contract StreamScheduler {
             cfaV1.cfa,
             abi.encodeCall(
                 cfaV1.cfa.updateFlowByOperator,
-                (superToken, msg.sender, receiver, flowRate, userData)
+                (superToken, msg.sender, receiver, flowRate, new bytes(0))
             ),
             new bytes(0)
         );
@@ -330,14 +330,14 @@ contract StreamScheduler {
         // Check if the endTime is in the past. Close the stream. Delete the stream order data.
         require(
             // solhint-disable-next-line not-rely-on-time
-            endTime == 0 || endTime <= block.timestamp, // End time is in the past
+            endTime == 0 || endTime > block.timestamp, // End time is in the past
             "Stream order end time is in the past."
         );
         cfaV1.host.callAgreement(
             cfaV1.cfa,
             abi.encodeCall(
                 cfaV1.cfa.deleteFlowByOperator,
-                (superToken, msg.sender, receiver, userData)
+                (superToken, msg.sender, receiver, new bytes(0))
             ),
             new bytes(0)
         );

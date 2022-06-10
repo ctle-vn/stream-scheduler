@@ -447,79 +447,6 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
     }
 
-    function testExecuteCreateStream() public {
-        streamScheduler.createStreamOrder(
-            alice,
-            superToken,
-            startTime,
-            1000,
-            startTime + 3600,
-            bytes("0x00")
-        );
-
-        host.callAgreement(
-            cfa,
-            abi.encodeCall(
-                cfa.updateFlowOperatorPermissions,
-                (
-                    superToken,
-                    address(streamScheduler),
-                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_CREATE,
-                    1000,
-                    new bytes(0)
-                )
-            ),
-            new bytes(0)
-        );
-
-        vm.expectEmit(true, true, false, true);
-        emit ExecuteCreateStream(
-            alice,
-            address(this),
-            superToken,
-            startTime,
-            1000,
-            startTime + 3600,
-            bytes("0x00")
-        );
-        vm.expectCall(
-            address(streamScheduler),
-            abi.encodeCall(
-                streamScheduler.executeCreateStream,
-                (
-                    alice,
-                    superToken,
-                    startTime,
-                    1000,
-                    startTime + 3600,
-                    bytes("0x00")
-                )
-            )
-        );
-        streamScheduler.executeCreateStream(
-            alice,
-            superToken,
-            startTime,
-            1000,
-            startTime + 3600,
-            bytes("0x00")
-        );
-        assertTrue(
-            streamScheduler.getStreamOrderHashesByValue(
-                keccak256(
-                    abi.encodePacked(
-                        address(this),
-                        alice,
-                        superToken,
-                        startTime,
-                        startTime + 3600
-                    )
-                )
-            )
-        );
-        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
-    }
-
     function testExecuteCreateStreamWithEndTimeZero() public {
         streamScheduler.createStreamOrder(
             alice,
@@ -606,5 +533,320 @@ contract StreamSchedulerTest is SuperfluidTester {
             0,
             bytes("0x00")
         );
+    }
+
+    function testFailedExecuteUpdateStreamDueToNoPermissions() public {
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectEmit(true, true, false, true);
+        emit ExecuteUpdateStream(
+            alice,
+            address(this),
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectCall(
+            address(streamScheduler),
+            abi.encodeCall(
+                streamScheduler.executeUpdateStream,
+                (
+                    alice,
+                    superToken,
+                    startTime,
+                    1000,
+                    startTime + 3600,
+                    bytes("0x00")
+                )
+            )
+        );
+        streamScheduler.executeUpdateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(
+            streamScheduler.getStreamOrderHashesByValue(
+                keccak256(
+                    abi.encodePacked(
+                        address(this),
+                        alice,
+                        superToken,
+                        startTime,
+                        startTime + 3600
+                    )
+                )
+            )
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+    }
+
+    function testExecuteCreateStream() public {
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+
+        host.callAgreement(
+            cfa,
+            abi.encodeCall(
+                cfa.updateFlowOperatorPermissions,
+                (
+                    superToken,
+                    address(streamScheduler),
+                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_CREATE,
+                    1000,
+                    new bytes(0)
+                )
+            ),
+            new bytes(0)
+        );
+
+        vm.expectEmit(true, true, false, true);
+        emit ExecuteCreateStream(
+            alice,
+            address(this),
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectCall(
+            address(streamScheduler),
+            abi.encodeCall(
+                streamScheduler.executeCreateStream,
+                (
+                    alice,
+                    superToken,
+                    startTime,
+                    1000,
+                    startTime + 3600,
+                    bytes("0x00")
+                )
+            )
+        );
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(
+            streamScheduler.getStreamOrderHashesByValue(
+                keccak256(
+                    abi.encodePacked(
+                        address(this),
+                        alice,
+                        superToken,
+                        startTime,
+                        startTime + 3600
+                    )
+                )
+            )
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+    }
+
+    function testExecuteUpdateStream() public {
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        host.callAgreement(
+            cfa,
+            abi.encodeCall(
+                cfa.updateFlowOperatorPermissions,
+                (
+                    superToken,
+                    address(streamScheduler),
+                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_CREATE,
+                    1000,
+                    new bytes(0)
+                )
+            ),
+            new bytes(0)
+        );
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+
+        host.callAgreement(
+            cfa,
+            abi.encodeCall(
+                cfa.updateFlowOperatorPermissions,
+                (
+                    superToken,
+                    address(streamScheduler),
+                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_UPDATE,
+                    1000,
+                    new bytes(0)
+                )
+            ),
+            new bytes(0)
+        );
+
+        vm.expectEmit(true, true, false, true);
+        emit ExecuteUpdateStream(
+            alice,
+            address(this),
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectCall(
+            address(streamScheduler),
+            abi.encodeCall(
+                streamScheduler.executeUpdateStream,
+                (
+                    alice,
+                    superToken,
+                    startTime,
+                    1000,
+                    startTime + 3600,
+                    bytes("0x00")
+                )
+            )
+        );
+        streamScheduler.executeUpdateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(
+            streamScheduler.getStreamOrderHashesByValue(
+                keccak256(
+                    abi.encodePacked(
+                        address(this),
+                        alice,
+                        superToken,
+                        startTime,
+                        startTime + 3600
+                    )
+                )
+            )
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+    }
+
+    function testExecuteDeleteStream() public {
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        host.callAgreement(
+            cfa,
+            abi.encodeCall(
+                cfa.updateFlowOperatorPermissions,
+                (
+                    superToken,
+                    address(streamScheduler),
+                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_CREATE,
+                    1000,
+                    new bytes(0)
+                )
+            ),
+            new bytes(0)
+        );
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+
+        host.callAgreement(
+            cfa,
+            abi.encodeCall(
+                cfa.updateFlowOperatorPermissions,
+                (
+                    superToken,
+                    address(streamScheduler),
+                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_DELETE,
+                    1000,
+                    new bytes(0)
+                )
+            ),
+            new bytes(0)
+        );
+
+        vm.expectEmit(true, true, false, true);
+        emit ExecuteDeleteStream(
+            alice,
+            address(this),
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        vm.expectCall(
+            address(streamScheduler),
+            abi.encodeCall(
+                streamScheduler.executeDeleteStream,
+                (
+                    alice,
+                    superToken,
+                    startTime,
+                    1000,
+                    startTime + 3600,
+                    bytes("0x00")
+                )
+            )
+        );
+        streamScheduler.executeDeleteStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 }
