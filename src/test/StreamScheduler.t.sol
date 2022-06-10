@@ -3,9 +3,10 @@ pragma solidity ^0.8.0;
 
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 import { FlowOperatorDefinitions } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
-import { SuperfluidTester, Superfluid, ConstantFlowAgreementV1, CFAv1Library, SuperTokenFactory } from "../test/SuperfluidTester.sol";
+import { ERC1820RegistryCompiled, SuperfluidFrameworkDeployer, SuperfluidTester, Superfluid, ISuperfluid, IConstantFlowAgreementV1, ConstantFlowAgreementV1, CFAv1Library, SuperTokenFactory } from "../test/SuperfluidTester.sol";
 import { StreamScheduler } from "../StreamScheduler.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC1820Registry } from "@openzeppelin/contracts/utils/introspection/IERC1820Registry.sol";
 
 /// @title Example Super Token Test
 /// @author ctle-vn, SuperfluidTester taken from jtriley.eth
@@ -21,8 +22,8 @@ contract StreamSchedulerTest is SuperfluidTester {
         bytes userData
     );
     event ExecuteCreateStream(
-        address receiver,
-        address sender,
+        address indexed receiver,
+        address indexed sender,
         ISuperToken superToken,
         uint256 startTime,
         int96 flowRate,
@@ -30,8 +31,8 @@ contract StreamSchedulerTest is SuperfluidTester {
         bytes userData
     );
     event ExecuteUpdateStream(
-        address receiver,
-        address sender,
+        address indexed receiver,
+        address indexed sender,
         ISuperToken superToken,
         uint256 startTime,
         int96 flowRate,
@@ -39,8 +40,8 @@ contract StreamSchedulerTest is SuperfluidTester {
         bytes userData
     );
     event ExecuteDeleteStream(
-        address receiver,
-        address sender,
+        address indexed receiver,
+        address indexed sender,
         ISuperToken superToken,
         uint256 startTime,
         int96 flowRate,
@@ -48,18 +49,46 @@ contract StreamSchedulerTest is SuperfluidTester {
         bytes userData
     );
 
+    SuperfluidFrameworkDeployer internal immutable sfDeployer;
+    SuperfluidFrameworkDeployer.Framework internal sf;
+    ISuperfluid host;
+    IConstantFlowAgreementV1 cfa;
+    StreamScheduler internal streamScheduler;
+    uint256 private _expectedTotalSupply = 0;
+
     /// @dev This is required by solidity for using the CFAv1Library in the tester
     using CFAv1Library for CFAv1Library.InitData;
 
-    /// @dev Example Stream Scheduler to test
-    StreamScheduler internal streamScheduler =
-        new StreamScheduler(sf.cfa, sf.host);
+    constructor() SuperfluidTester(3) {
+        vm.startPrank(admin);
+        vm.etch(ERC1820RegistryCompiled.at, ERC1820RegistryCompiled.bin);
+        sfDeployer = new SuperfluidFrameworkDeployer();
+        sf = sfDeployer.getFramework();
+        host = sf.host;
+        cfa = sf.cfa;
+        vm.stopPrank();
+
+        /// @dev Example Stream Scheduler to test
+        streamScheduler = new StreamScheduler(cfa, host);
+    }
+
+    function setUp() public virtual {
+        (token, superToken) = sfDeployer.deployWrapperSuperToken("FTT", "FTT");
+
+        for (uint256 i = 0; i < N_TESTERS; ++i) {
+            token.mint(TEST_ACCOUNTS[i], INIT_TOKEN_BALANCE);
+
+            vm.startPrank(TEST_ACCOUNTS[i]);
+            token.approve(address(superToken), INIT_SUPER_TOKEN_BALANCE);
+            superToken.upgrade(INIT_SUPER_TOKEN_BALANCE);
+            _expectedTotalSupply += INIT_SUPER_TOKEN_BALANCE;
+            vm.stopPrank();
+        }
+    }
 
     /// @dev Constants for Testing
     uint256 internal startTime = block.timestamp + 1;
     uint256 testNumber;
-
-    constructor() SuperfluidTester(3) {}
 
     function testCreateStreamOrderWithExplicitTimeWindow() public {
         vm.expectEmit(true, true, false, true);
@@ -429,10 +458,10 @@ contract StreamSchedulerTest is SuperfluidTester {
             bytes("0x00")
         );
 
-        sf.host.callAgreement(
-            sf.cfa,
+        host.callAgreement(
+            cfa,
             abi.encodeCall(
-                sf.cfa.updateFlowOperatorPermissions,
+                cfa.updateFlowOperatorPermissions,
                 (
                     superToken,
                     address(streamScheduler),
@@ -446,8 +475,8 @@ contract StreamSchedulerTest is SuperfluidTester {
 
         vm.expectEmit(true, true, false, true);
         emit ExecuteCreateStream(
-            address(this),
             alice,
+            address(this),
             superToken,
             startTime,
             1000,
@@ -476,20 +505,20 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime + 3600,
             bytes("0x00")
         );
-        // assertTrue(
-        //     streamScheduler.getStreamOrderHashesByValue(
-        //         keccak256(
-        //             abi.encodePacked(
-        //                 address(this),
-        //                 alice,
-        //                 superToken,
-        //                 startTime + 1,
-        //                 startTime + 3600
-        //             )
-        //         )
-        //     )
-        // );
-        // assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+        assertTrue(
+            streamScheduler.getStreamOrderHashesByValue(
+                keccak256(
+                    abi.encodePacked(
+                        address(this),
+                        alice,
+                        superToken,
+                        startTime,
+                        startTime + 3600
+                    )
+                )
+            )
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
     }
 
     function testFailedExecuteDeleteStreamWhenEndTimeInvalid() public {

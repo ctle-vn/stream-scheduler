@@ -23,8 +23,8 @@ contract StreamScheduler {
         _host = host;
         streamOrderLength = 0;
         // Check cfa and host address to be non zero.
-        // assert(address(_host) != address(0));
-        // assert(address(_cfa) != address(0));
+        assert(address(_host) != address(0));
+        assert(address(_cfa) != address(0));
 
         //initialize InitData struct, and set equal to cfaV1
         cfaV1 = CFAv1Library.InitData(host, cfa);
@@ -59,8 +59,8 @@ contract StreamScheduler {
      * @param userData Arbitrary UserData to be added to the stream (or bytes(0) if no data needed)
      */
     event ExecuteCreateStream(
-        address receiver,
-        address sender,
+        address indexed receiver,
+        address indexed sender,
         ISuperToken superToken,
         uint256 startTime,
         int96 flowRate,
@@ -78,8 +78,8 @@ contract StreamScheduler {
      * @param userData Arbitrary UserData to be added to the stream (or bytes(0) if no data needed)
      */
     event ExecuteUpdateStream(
-        address receiver,
-        address sender,
+        address indexed receiver,
+        address indexed sender,
         ISuperToken superToken,
         uint256 startTime,
         int96 flowRate,
@@ -97,8 +97,8 @@ contract StreamScheduler {
      * @param userData Arbitrary UserData to be added to the stream (or bytes(0) if no data needed)
      */
     event ExecuteDeleteStream(
-        address receiver,
-        address sender,
+        address indexed receiver,
+        address indexed sender,
         ISuperToken superToken,
         uint256 startTime,
         int96 flowRate,
