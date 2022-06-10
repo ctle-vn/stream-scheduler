@@ -23,8 +23,8 @@ contract StreamScheduler {
         _host = host;
         streamOrderLength = 0;
         // Check cfa and host address to be non zero.
-        assert(address(_host) != address(0));
-        assert(address(_cfa) != address(0));
+        // assert(address(_host) != address(0));
+        // assert(address(_cfa) != address(0));
 
         //initialize InitData struct, and set equal to cfaV1
         cfaV1 = CFAv1Library.InitData(host, cfa);
@@ -268,6 +268,13 @@ contract StreamScheduler {
         uint256 endTime,
         bytes memory userData
     ) external {
+        require(
+            // solhint-disable-next-line not-rely-on-time
+            (startTime > block.timestamp && endTime > startTime) ||
+                (startTime == 0 && endTime != 0) ||
+                (startTime != 0 && endTime == 0),
+            "Stream time window is invalid."
+        );
         // Will work exactly as the create version, except this should be used if a stream already exists,
         require(
             streamOrderHashes[

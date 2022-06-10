@@ -29,6 +29,24 @@ contract StreamSchedulerTest is SuperfluidTester {
         uint256 endTime,
         bytes userData
     );
+    event ExecuteUpdateStream(
+        address receiver,
+        address sender,
+        ISuperToken superToken,
+        uint256 startTime,
+        int96 flowRate,
+        uint256 endTime,
+        bytes userData
+    );
+    event ExecuteDeleteStream(
+        address receiver,
+        address sender,
+        ISuperToken superToken,
+        uint256 startTime,
+        int96 flowRate,
+        uint256 endTime,
+        bytes userData
+    );
 
     /// @dev This is required by solidity for using the CFAv1Library in the tester
     using CFAv1Library for CFAv1Library.InitData;
@@ -343,6 +361,63 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
     }
 
+    function testFailedExecuteUpdateStreamWhenTimeWindowInvalid() public {
+        // Expect revert on when start time is in past.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+
+        // Expect revert on when start and end are both 0.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeUpdateStream(
+            alice,
+            superToken,
+            0,
+            1000,
+            0,
+            bytes("0x00")
+        );
+
+        // Expect revert on when start time is exactly block.timestamp.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeUpdateStream(
+            alice,
+            superToken,
+            block.timestamp,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+
+        // Expect revert on when start time is after end time.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeUpdateStream(
+            alice,
+            superToken,
+            startTime + 3600,
+            1000,
+            startTime,
+            bytes("0x00")
+        );
+
+        // Expect revert on when start time is after end time.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeUpdateStream(
+            alice,
+            superToken,
+            startTime + 3600,
+            1000,
+            startTime + 3600,
+            bytes("0x00")
+        );
+    }
+
     // Test executeCreateStream
     function testExecuteCreateStream() public {
         streamScheduler.createStreamOrder(
@@ -416,4 +491,98 @@ contract StreamSchedulerTest is SuperfluidTester {
         // );
         // assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
     }
+
+    function testFailedExecuteDeleteStreamWhenEndTimeInvalid() public {
+        // Expect revert on when end time is in past.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeDeleteStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            startTime - 3600,
+            bytes("0x00")
+        );
+
+        // Expect revert on when end time is exactly block.timestamp.
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeDeleteStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            block.timestamp,
+            bytes("0x00")
+        );
+
+        // Expect revert on when end time is 0
+        vm.expectRevert(bytes("Stream time window is invalid"));
+        streamScheduler.executeDeleteStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            0,
+            bytes("0x00")
+        );
+    }
+
+    // function testExecuteDeleteStream() public {
+    //     streamScheduler.createStreamOrder(
+    //         alice,
+    //         superToken,
+    //         startTime,
+    //         1000,
+    //         startTime + 3600,
+    //         bytes("0x00")
+    //     );
+
+    //     sf.host.callAgreement(
+    //         sf.cfa,
+    //         abi.encodeCall(
+    //             sf.cfa.updateFlowOperatorPermissions,
+    //             (
+    //                 superToken,
+    //                 address(streamScheduler),
+    //                 FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_DELETE,
+    //                 1000,
+    //                 new bytes(0)
+    //             )
+    //         ),
+    //         new bytes(0)
+    //     );
+
+    //     vm.expectEmit(true, true, false, true);
+    //     emit ExecuteDeleteStream(
+    //         address(this),
+    //         alice,
+    //         superToken,
+    //         startTime,
+    //         1000,
+    //         startTime + 3600,
+    //         bytes("0x00")
+    //     );
+    //     vm.expectCall(
+    //         address(streamScheduler),
+    //         abi.encodeCall(
+    //             streamScheduler.executeDeleteStream,
+    //             (
+    //                 alice,
+    //                 superToken,
+    //                 startTime,
+    //                 1000,
+    //                 startTime + 3600,
+    //                 bytes("0x00")
+    //             )
+    //         )
+    //     );
+    //     streamScheduler.executeDeleteStream(
+    //         alice,
+    //         superToken,
+    //         startTime,
+    //         1000,
+    //         startTime + 3600,
+    //         bytes("0x00")
+    //     );
+    // }
 }
