@@ -447,7 +447,6 @@ contract StreamSchedulerTest is SuperfluidTester {
         );
     }
 
-    // Test executeCreateStream
     function testExecuteCreateStream() public {
         streamScheduler.createStreamOrder(
             alice,
@@ -521,6 +520,59 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
     }
 
+    function testExecuteCreateStreamWithEndTimeZero() public {
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            0,
+            bytes("0x00")
+        );
+
+        host.callAgreement(
+            cfa,
+            abi.encodeCall(
+                cfa.updateFlowOperatorPermissions,
+                (
+                    superToken,
+                    address(streamScheduler),
+                    FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_CREATE,
+                    1000,
+                    new bytes(0)
+                )
+            ),
+            new bytes(0)
+        );
+
+        vm.expectEmit(true, true, false, true);
+        emit ExecuteCreateStream(
+            alice,
+            address(this),
+            superToken,
+            startTime,
+            1000,
+            0,
+            bytes("0x00")
+        );
+        vm.expectCall(
+            address(streamScheduler),
+            abi.encodeCall(
+                streamScheduler.executeCreateStream,
+                (alice, superToken, startTime, 1000, 0, bytes("0x00"))
+            )
+        );
+        streamScheduler.executeCreateStream(
+            alice,
+            superToken,
+            startTime,
+            1000,
+            0,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
+    }
+
     function testFailedExecuteDeleteStreamWhenEndTimeInvalid() public {
         // Expect revert on when end time is in past.
         vm.expectRevert(bytes("Stream time window is invalid"));
@@ -555,63 +607,4 @@ contract StreamSchedulerTest is SuperfluidTester {
             bytes("0x00")
         );
     }
-
-    // function testExecuteDeleteStream() public {
-    //     streamScheduler.createStreamOrder(
-    //         alice,
-    //         superToken,
-    //         startTime,
-    //         1000,
-    //         startTime + 3600,
-    //         bytes("0x00")
-    //     );
-
-    //     sf.host.callAgreement(
-    //         sf.cfa,
-    //         abi.encodeCall(
-    //             sf.cfa.updateFlowOperatorPermissions,
-    //             (
-    //                 superToken,
-    //                 address(streamScheduler),
-    //                 FlowOperatorDefinitions.AUTHORIZE_FLOW_OPERATOR_DELETE,
-    //                 1000,
-    //                 new bytes(0)
-    //             )
-    //         ),
-    //         new bytes(0)
-    //     );
-
-    //     vm.expectEmit(true, true, false, true);
-    //     emit ExecuteDeleteStream(
-    //         address(this),
-    //         alice,
-    //         superToken,
-    //         startTime,
-    //         1000,
-    //         startTime + 3600,
-    //         bytes("0x00")
-    //     );
-    //     vm.expectCall(
-    //         address(streamScheduler),
-    //         abi.encodeCall(
-    //             streamScheduler.executeDeleteStream,
-    //             (
-    //                 alice,
-    //                 superToken,
-    //                 startTime,
-    //                 1000,
-    //                 startTime + 3600,
-    //                 bytes("0x00")
-    //             )
-    //         )
-    //     );
-    //     streamScheduler.executeDeleteStream(
-    //         alice,
-    //         superToken,
-    //         startTime,
-    //         1000,
-    //         startTime + 3600,
-    //         bytes("0x00")
-    //     );
-    // }
 }
