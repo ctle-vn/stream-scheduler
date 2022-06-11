@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 import { FlowOperatorDefinitions } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 import { ERC1820RegistryCompiled, SuperfluidFrameworkDeployer, SuperfluidTester, Superfluid, ISuperfluid, IConstantFlowAgreementV1, ConstantFlowAgreementV1, CFAv1Library, SuperTokenFactory } from "../test/SuperfluidTester.sol";
-import { StreamScheduler } from "../StreamScheduler.sol";
+import { StreamScheduler } from "../../contracts/StreamScheduler.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC1820Registry } from "@openzeppelin/contracts/utils/introspection/IERC1820Registry.sol";
 

@@ -4,5 +4,9 @@
 /artifacts
 /typechain-types
 /coverage
+/build
 coverage.json
 .vscode
+abi
+.history/
+.DS_Store
