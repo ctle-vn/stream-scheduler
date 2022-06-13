@@ -1,5 +1,4 @@
 // scripts/deploy.js
-const { ethers, web3 } = require("hardhat");
 const deployFramework = require("@superfluid-finance/ethereum-contracts/scripts/deploy-framework");
 const deployTestToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-token");
 const deploySuperToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-super-token");
@@ -38,13 +37,12 @@ async function deployFrameworkAndTokens() {
             },
         );
         const url = "http://localhost:8545";
-
         const provider = new ethers.providers.JsonRpcProvider(url);
         //initialize the superfluid framework...put custom and web3 only bc we are using hardhat locally
         return await Framework.create({
             networkName: "local",
             dataMode: "WEB3_ONLY",
-            provider: customHttpProvider,
+            provider,
             resolverAddress: process.env.RESOLVER_ADDRESS, //this is how you get the resolver address
             protocolReleaseVersion: "test",
         });
@@ -57,10 +55,17 @@ async function main() {
     const sf = await deployFrameworkAndTokens();
 
     const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
-    const streamScheduler = await StreamScheduler.deploy(sf.cfaV1, sf.host);
-    console.log("Deploying StreamScheduler...");
+    const streamScheduler = await StreamScheduler.deploy(
+        sf.settings.config.cfaV1Address,
+        sf.settings.config.hostAddress,
+    );
+    console.log("================ Deploying StreamScheduler =================");
     await streamScheduler.deployed();
-    console.log("StreamScheduler deployed to:", streamScheduler.address);
+    console.log(
+        "================= StreamScheduler deployed to:",
+        streamScheduler.address,
+        "=================",
+    );
 }
 
 main()
