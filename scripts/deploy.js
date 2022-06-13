@@ -1,14 +1,14 @@
-// migrations/2_deploy.js
-const { ethers } = require("hardhat");
-const StreamScheduler = artifacts.require("StreamScheduler");
-const ConstantFlowAgreement = artifacts.require("IConstantFlowAgreementV1");
-const Superfluid = artifacts.require("ISuperfluid");
-const web3Provider = new ethers.providers.Web3Provider(web3.currentProvider);
-const { Framework } = require("@superfluid-finance/sdk-core");
+// scripts/deploy.js
+const ethers = require("hardhat");
 const deployFramework = require("@superfluid-finance/ethereum-contracts/scripts/deploy-framework");
 const deployTestToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-token");
 const deploySuperToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-super-token");
+const { Framework } = require("@superfluid-finance/sdk-core");
+const StreamSchedulerJSON = require("../artifacts/contracts/StreamScheduler.sol/StreamScheduler.json");
+const StreamSchedulerABI = StreamSchedulerJSON.abi;
+const web3Provider = new ethers.providers.Web3Provider(web3.currentProvider);
 const provider = web3Provider;
+require("dotenv").config();
 
 const errorHandler = (type, err) => {
     if (err) console.error("Deploy " + type + " Error: ", err);
@@ -16,10 +16,9 @@ const errorHandler = (type, err) => {
 
 async function deployFrameworkAndTokens() {
     try {
-        const [Deployer] = (await ethers.getSigners()).map(x => x.address);
-        console.log("Deployer: ", Deployer);
+        const [Deployer] = (await hre.ethers.getSigners()).map(x => x.address);
         await deployFramework(x => errorHandler("Framework", x), {
-            web3,
+            web3: web3,
             from: Deployer,
         });
         await deployTestToken(
@@ -43,7 +42,7 @@ async function deployFrameworkAndTokens() {
     }
 }
 
-module.exports = async function (deployer) {
+async function main() {
     await deployFrameworkAndTokens();
 
     //initialize the superfluid framework...put custom and web3 only bc we are using hardhat locally
@@ -54,5 +53,20 @@ module.exports = async function (deployer) {
         resolverAddress: process.env.RESOLVER_ADDRESS, //this is how you get the resolver address
         protocolReleaseVersion: "test",
     });
-    await deployer.deploy(StreamScheduler, sf.cfaV1, sf.host);
-};
+    // We get the contract to deploy
+    // const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
+    const StreamScheduler = await hre.ethers.getContractFactory(
+        "StreamScheduler",
+    );
+    const streamScheduler = await StreamScheduler.deploy(sf.cfaV1, sf.host);
+    console.log("Deploying StreamScheduler...");
+    await streamScheduler.deployed();
+    console.log("StreamScheduler deployed to:", box.address);
+}
+
+main()
+    .then(() => process.exit(0))
+    .catch(error => {
+        console.error(error);
+        process.exit(1);
+    });
