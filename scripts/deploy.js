@@ -1,5 +1,5 @@
 // scripts/deploy.js
-const ethers = require("hardhat");
+const { ethers, web3 } = require("hardhat");
 const deployFramework = require("@superfluid-finance/ethereum-contracts/scripts/deploy-framework");
 const deployTestToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-token");
 const deploySuperToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-super-token");
@@ -16,7 +16,7 @@ const errorHandler = (type, err) => {
 
 async function deployFrameworkAndTokens() {
     try {
-        const [Deployer] = (await hre.ethers.getSigners()).map(x => x.address);
+        const [Deployer] = (await ethers.getSigners()).map(x => x.address);
         await deployFramework(x => errorHandler("Framework", x), {
             web3: web3,
             from: Deployer,
@@ -37,31 +37,30 @@ async function deployFrameworkAndTokens() {
                 from: Deployer,
             },
         );
+        const url = "http://localhost:8545";
+
+        const provider = new ethers.providers.JsonRpcProvider(url);
+        //initialize the superfluid framework...put custom and web3 only bc we are using hardhat locally
+        return await Framework.create({
+            networkName: "local",
+            dataMode: "WEB3_ONLY",
+            provider: customHttpProvider,
+            resolverAddress: process.env.RESOLVER_ADDRESS, //this is how you get the resolver address
+            protocolReleaseVersion: "test",
+        });
     } catch (err) {
         console.error(err);
     }
 }
 
 async function main() {
-    await deployFrameworkAndTokens();
+    const sf = await deployFrameworkAndTokens();
 
-    //initialize the superfluid framework...put custom and web3 only bc we are using hardhat locally
-    const sf = await Framework.create({
-        networkName: "custom",
-        provider,
-        dataMode: "WEB3_ONLY",
-        resolverAddress: process.env.RESOLVER_ADDRESS, //this is how you get the resolver address
-        protocolReleaseVersion: "test",
-    });
-    // We get the contract to deploy
-    // const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
-    const StreamScheduler = await hre.ethers.getContractFactory(
-        "StreamScheduler",
-    );
+    const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
     const streamScheduler = await StreamScheduler.deploy(sf.cfaV1, sf.host);
     console.log("Deploying StreamScheduler...");
     await streamScheduler.deployed();
-    console.log("StreamScheduler deployed to:", box.address);
+    console.log("StreamScheduler deployed to:", streamScheduler.address);
 }
 
 main()
