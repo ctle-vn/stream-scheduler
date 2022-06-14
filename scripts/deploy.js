@@ -12,8 +12,22 @@ const errorHandler = (type, err) => {
     if (err) console.error("Deploy " + type + " Error: ", err);
 };
 
+const parseEventDataArgs = eventData => {
+    const streamOrderData = {};
+    streamOrderData.streamOrderHash = eventData.receiver;
+    streamOrderData.sender = eventData.sender;
+    streamOrderData.sender = eventData.superToken;
+    streamOrderData.sender = eventData.flowRate;
+    streamOrderData.sender = eventData.endTime;
+    streamOrderData.sender = eventData.userData;
+    return streamOrderData;
+};
+
 const url = "http://localhost:8545";
 const provider = new ethers.providers.JsonRpcProvider(url);
+const ALLOW_CREATE = 1 << 0;
+const ALLOW_UPDATE = 1 << 1;
+const ALLOW_DELETE = 1 << 2;
 
 async function deployFrameworkAndTokens() {
     try {
@@ -82,13 +96,15 @@ async function main() {
     );
 
     const flowRate = "1000000000000";
+    const startTime1 = Math.floor(Date.now() / 1000) + 1000;
+    const endTime1 = Math.floor(Date.now() / 1000) + 1000000;
     await streamScheduler.createStreamOrder(
         accounts[1],
         fDai.address,
         // Convert Date.now to seconds
-        Math.floor(Date.now() / 1000) + 1000,
+        startTime1,
         flowRate,
-        Math.floor(Date.now() / 1000) + 1000000,
+        endTime1,
         "0x",
     );
     await streamScheduler.createStreamOrder(
@@ -111,22 +127,96 @@ async function main() {
         provider,
     );
     // get past events emitted from contract
-    const events = await contract.queryFilter(
+    let events = await contract.queryFilter(
         contract.filters.CreateStreamOrder(),
         0,
         "latest",
     );
-    console.log(events);
 
-    // const filter = {
-    //     address: streamScheduler.address,
-    //     fromBlock: 0,
-    //     toBlock: 10000,
-    //     topics: [contract.interface.events.CreateStreamOrder.topic],
-    // };
-    // const logs = await provider.getLogs(filter);
+    // Go through the events, and store the event data into SQLLite database
+    let streamOrderList = [];
+    let latestBlock = 0;
+    for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        const eventData = event.args;
+        const streamOrderData = parseEventDataArgs(eventData);
+        const eventName = event.event;
+        const eventDataHash = event.data;
+        const eventBlockNumber = event.blockNumber;
+        const eventTimestamp = event.timestamp;
+        const blob = {
+            event_name: eventName,
+            event_data_hash: eventDataHash,
+            event_block_number: eventBlockNumber,
+            event_timestamp: eventTimestamp,
+            event_receiver: streamOrderData.receiver,
+            event_sender: streamOrderData.sender,
+            event_super_token: streamOrderData.superToken,
+            event_flow_rate: streamOrderData.flowRate,
+            event_end_time: streamOrderData.endTime,
+            event_user_data: streamOrderData.userData,
+        };
+        streamOrderList.push(blob);
+        latestBlock = eventBlockNumber;
 
-    // console.log("Superfluid instance:", sf.address);
+        // Write to SQL Lite database
+        // const db = new sqlite3.Database("db/streams.db");
+        // db.run(
+        //     `INSERT INTO streams (event_name, event_address, event_block, event_timestamp, event_data) VALUES (?, ?, ?, ?, ?)`,
+        //     [eventName, eventAddress, eventBlock, eventTimestamp, eventData],
+        //     function (err) {
+        //         if (err) {
+        //             return console.log(err.message);
+        //         }
+        //         console.log(
+        //             `A row has been inserted with rowid ${this.lastID}`,
+        //         );
+        //     },
+        // );
+        // db.close();
+    }
+
+    console.log("================ UPDATING PERMISSIONS =================");
+    const signer = sf.createSigner({
+        privateKey:
+            "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+        provider: provider,
+    });
+
+    await sf.cfaV1
+        .updateFlowOperatorPermissions({
+            flowOperator: streamScheduler.address,
+            permissions: 7,
+            flowRateAllowance: flowRate,
+            superToken: fDai.address,
+        })
+        .exec(signer);
+
+    console.log(
+        "================ SUCCESSFULLY UPDATED PERMISSIONS =================",
+    );
+
+    console.log("================ EXECUTE CREATE STREAM =================");
+
+    // Call executeCreateStream
+    await streamScheduler.executeCreateStream(
+        accounts[1],
+        fDai.address,
+        // Convert Date.now to seconds
+        startTime1,
+        flowRate,
+        endTime1,
+        "0x",
+    );
+
+    // get past events emitted from contract
+    events = await contract.queryFilter(
+        contract.filters.ExecuteCreateStream(),
+        latestBlock,
+        "latest",
+    );
+    console.log("Events:", events);
+
     console.log("================ END =================");
 }
 
