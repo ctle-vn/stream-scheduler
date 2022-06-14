@@ -4,12 +4,16 @@ const deployTestToken = require("@superfluid-finance/ethereum-contracts/scripts/
 const deploySuperToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-super-token");
 const { Framework } = require("@superfluid-finance/sdk-core");
 const StreamSchedulerJSON = require("../artifacts/contracts/StreamScheduler.sol/StreamScheduler.json");
+const { Contract } = require("ethers");
 const StreamSchedulerABI = StreamSchedulerJSON.abi;
 require("dotenv").config();
 
 const errorHandler = (type, err) => {
     if (err) console.error("Deploy " + type + " Error: ", err);
 };
+
+const url = "http://localhost:8545";
+const provider = new ethers.providers.JsonRpcProvider(url);
 
 async function deployFrameworkAndTokens() {
     try {
@@ -34,8 +38,7 @@ async function deployFrameworkAndTokens() {
                 from: Deployer,
             },
         );
-        const url = "http://localhost:8545";
-        const provider = new ethers.providers.JsonRpcProvider(url);
+
         //initialize the superfluid framework...put custom and web3 only bc we are using hardhat locally
         return await Framework.create({
             networkName: "local",
@@ -88,10 +91,40 @@ async function main() {
         Math.floor(Date.now() / 1000) + 1000000,
         "0x",
     );
+    await streamScheduler.createStreamOrder(
+        accounts[1],
+        fDai.address,
+        // Convert Date.now to seconds
+        Math.floor(Date.now() / 1000) + 1000,
+        flowRate,
+        Math.floor(Date.now() / 1000) + 10000230,
+        "0x",
+    );
     console.log(
         "Length of stream order hashes: ",
         await streamScheduler.getStreamOrderHashesLength(),
     );
+
+    const contract = new Contract(
+        streamScheduler.address,
+        StreamSchedulerABI,
+        provider,
+    );
+    // get past events emitted from contract
+    const events = await contract.queryFilter(
+        contract.filters.CreateStreamOrder(),
+        0,
+        "latest",
+    );
+    console.log(events);
+
+    // const filter = {
+    //     address: streamScheduler.address,
+    //     fromBlock: 0,
+    //     toBlock: 10000,
+    //     topics: [contract.interface.events.CreateStreamOrder.topic],
+    // };
+    // const logs = await provider.getLogs(filter);
 
     // console.log("Superfluid instance:", sf.address);
     console.log("================ END =================");
