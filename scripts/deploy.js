@@ -5,8 +5,6 @@ const deploySuperToken = require("@superfluid-finance/ethereum-contracts/scripts
 const { Framework } = require("@superfluid-finance/sdk-core");
 const StreamSchedulerJSON = require("../artifacts/contracts/StreamScheduler.sol/StreamScheduler.json");
 const StreamSchedulerABI = StreamSchedulerJSON.abi;
-const web3Provider = new ethers.providers.Web3Provider(web3.currentProvider);
-const provider = web3Provider;
 require("dotenv").config();
 
 const errorHandler = (type, err) => {
@@ -43,7 +41,7 @@ async function deployFrameworkAndTokens() {
             networkName: "local",
             dataMode: "WEB3_ONLY",
             provider,
-            resolverAddress: process.env.RESOLVER_ADDRESS, //this is how you get the resolver address
+            resolverAddress: process.env.RESOLVER_ADDRESS, // can just call, no need to set anywhere
             protocolReleaseVersion: "test",
         });
     } catch (err) {
@@ -66,6 +64,37 @@ async function main() {
         streamScheduler.address,
         "=================",
     );
+
+    console.log("================ START =================");
+    const accounts = await ethers.provider.listAccounts();
+    console.log(accounts);
+    // console.log("Superfluid instance:", sf);
+
+    const fDai = await sf.loadSuperToken("fDAIx");
+    console.log("SuperToken instance:", fDai.address);
+
+    console.log(
+        "Length of stream order hashes: ",
+        await streamScheduler.getStreamOrderHashesLength(),
+    );
+
+    const flowRate = "1000000000000";
+    await streamScheduler.createStreamOrder(
+        accounts[1],
+        fDai.address,
+        // Convert Date.now to seconds
+        Math.floor(Date.now() / 1000) + 1000,
+        flowRate,
+        Math.floor(Date.now() / 1000) + 1000000,
+        "0x",
+    );
+    console.log(
+        "Length of stream order hashes: ",
+        await streamScheduler.getStreamOrderHashesLength(),
+    );
+
+    // console.log("Superfluid instance:", sf.address);
+    console.log("================ END =================");
 }
 
 main()

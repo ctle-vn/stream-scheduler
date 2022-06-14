@@ -6,5 +6,6 @@
 
 ## Local Deployment + Testing
 
-`npx ganache-cli --deterministic` Runs local blockchain instance
-`npx truffle migrate --network development` Compiles and starts up migrations scripts, i.e deploys the contracts.
+`npx hardhat node` Runs local blockchain instance
+`npx hardhat run --network localhost scripts/deploy.js` Compiles, spins up Superfluid and deploys StreamScheduler contract
+`npx hardhat console --network localhost` Interactive console to call contract.
