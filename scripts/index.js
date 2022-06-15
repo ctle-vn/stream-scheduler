@@ -7,6 +7,25 @@ const ConstantFlowAgreementV1ABI = ConstantFlowAgreementV1JSON.abi;
 const SuperfluidJSON = require("../artifacts/@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol/ISuperfluid.json");
 const { ethers } = require("hardhat");
 const SuperfluidABI = SuperfluidJSON.abi;
+
+//db stuff
+const pg = require("pg");
+const path = require("path");
+const fs = require("fs");
+const sql = fs
+    .readFileSync(path.resolve(__dirname, "./../database/init.sql"))
+    .toString();
+// Write sql to postgres database
+const writeSQL = async () => {
+    const client = new pg.Client({
+        connectionString:
+            "postgres://superfluid:password@localhost:5432/superfluid",
+    });
+    await client.connect();
+    await client.query(sql);
+    await client.end();
+};
+
 require("dotenv").config();
 
 const url = "http://localhost:8545";
@@ -22,6 +41,19 @@ const fDaiAddress = "0x1f65B7b9b3ADB4354fF76fD0582bB6b0d046a41c";
 const flowRate = "1000000000000";
 
 async function main() {
+    console.log("================ CREATING TABLE =================");
+    await writeSQL();
+    console.log("================ DONE CREATING =================");
+    console.log("================ START QUERY =================");
+    const client = new pg.Client({
+        connectionString:
+            "postgres://superfluid:password@localhost:5432/superfluid",
+    });
+    await client.connect();
+    const result = await client.query("SELECT * FROM stream_orders;");
+    console.log("ROWS: ", result.rows);
+    console.log("================ DONE QUERY =================");
+
     const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
     // const host = await new ethers.Contract(
     //     superfluidCFAAddress,
@@ -110,22 +142,6 @@ async function main() {
         };
         streamOrderList.push(blob);
         latestBlock = eventBlockNumber;
-
-        // Write to SQL Lite database
-        // const db = new sqlite3.Database("db/streams.db");
-        // db.run(
-        //     `INSERT INTO streams (event_name, event_address, event_block, event_timestamp, event_data) VALUES (?, ?, ?, ?, ?)`,
-        //     [eventName, eventAddress, eventBlock, eventTimestamp, eventData],
-        //     function (err) {
-        //         if (err) {
-        //             return console.log(err.message);
-        //         }
-        //         console.log(
-        //             `A row has been inserted with rowid ${this.lastID}`,
-        //         );
-        //     },
-        // );
-        // db.close();
     }
 
     console.log("================ EXECUTE CREATE STREAM =================");

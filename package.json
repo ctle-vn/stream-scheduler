@@ -60,6 +60,7 @@
     "dependencies": {
         "@nomiclabs/hardhat-waffle": "^2.0.3",
         "ethereum-waffle": "^3.4.4",
+        "pg": "^8.7.3",
         "web3": "^1.7.3"
     }
 }
