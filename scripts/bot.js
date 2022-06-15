@@ -7,23 +7,38 @@ const client = new pg.Client({
     connectionString: connectionString,
 });
 const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
-const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
-const streamScheduler = await StreamScheduler.attach(streamSchedulerAddress);
 
-async function runBot(events) {
+async function runBot(streamScheduler) {
     // Query the db for the latest block number.
     const latestBlockNumber = await getLatestBlockNumberFromDB();
     console.log("Latest Block Number: ", latestBlockNumber);
 
     // Use this block number as the "from" parameter and get all past events from the contract.
-    const pastEvents = await getPastEventsFromContract(latestBlockNumber);
+    const pastEvents = await getPastEventsFromContract(
+        streamScheduler,
+        latestBlockNumber,
+    );
 
     // Store all the stream orders back into the database.
     await storeStreamOrdersIntoDB(pastEvents);
 
     // Loop through the events and check differentiate the diff types of stream orders.
-    await processStreamOrders(pastEvents);
+    await processStreamOrders(streamScheduler, pastEvents);
+
+    console.log("Finished processing stream orders");
+    console.log("Bot job completed");
 }
+
+const parseEventDataArgs = eventData => {
+    const streamOrderData = {};
+    streamOrderData.receiver = eventData.receiver;
+    streamOrderData.sender = eventData.sender;
+    streamOrderData.superToken = eventData.superToken;
+    streamOrderData.flowRate = eventData.flowRate;
+    streamOrderData.endTime = eventData.endTime;
+    streamOrderData.userData = eventData.userData;
+    return streamOrderData;
+};
 
 const parseToDeleteStreamOrder = rows => {
     let streamOrders = [];
@@ -36,7 +51,7 @@ const parseToDeleteStreamOrder = rows => {
     return streamOrders;
 };
 
-async function processStreamOrders(events) {
+async function processStreamOrders(streamScheduler, events) {
     const timeNowInSecs = Math.floor(Date.now() / 1000);
     let streamOrdersToDelete = [];
     let streamOrdersToUpdateOrCreate = [];
@@ -201,7 +216,7 @@ async function getLatestBlockNumberFromDB() {
     }
 }
 
-async function getPastEventsFromContract(latestBlockNumber) {
+async function getPastEventsFromContract(streamScheduler, latestBlockNumber) {
     return await streamScheduler.queryFilter(
         streamScheduler.filters.CreateStreamOrder(),
         latestBlockNumber,
@@ -262,7 +277,11 @@ async function insertStreamOrdersIntoDB(streamOrderList) {
 }
 
 async function main() {
-    runBot();
+    const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
+    const streamScheduler = await StreamScheduler.attach(
+        streamSchedulerAddress,
+    );
+    await runBot(streamScheduler);
 }
 
 main()
