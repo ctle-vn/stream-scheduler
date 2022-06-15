@@ -76,9 +76,6 @@ const parseToStreamOrder = rows => {
 };
 
 async function main() {
-    // console.log("================ CREATING TABLE =================");
-    // await writeSQL();
-    // console.log("================ DONE CREATING =================");
     console.log("================ START QUERY =================");
     const client = new pg.Client({
         connectionString,
@@ -89,27 +86,10 @@ async function main() {
     console.log("================ DONE QUERY =================");
 
     const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
-    // const host = await new ethers.Contract(
-    //     superfluidCFAAddress,
-    //     ConstantFlowAgreementV1ABI,
-    //     provider,
-    // );
-    // const cfaV1 = await new ethers.Contract(
-    //     superfluidHostAddress,
-    //     SuperfluidABI,
-    //     provider,
-    // );
 
     const streamScheduler = await StreamScheduler.attach(
         streamSchedulerAddress,
     );
-    // const sf = await Framework.create({
-    //     networkName: "local",
-    //     dataMode: "WEB3_ONLY",
-    //     provider,
-    //     resolverAddress: "0xD5ac451B0c50B9476107823Af206eD814a2e2580", // can just call, no need to set anywhere
-    //     protocolReleaseVersion: "test",
-    // });
     const accounts = await ethers.provider.listAccounts();
 
     console.log(
