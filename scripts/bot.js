@@ -157,7 +157,6 @@ async function checkStreamOrdersOnChain(streamScheduler, streamOrder) {
                 streamOrder.superToken,
                 streamOrder.startTime,
                 streamOrder.endTime,
-                streamOrder.flowRate,
             ],
         ),
     );
