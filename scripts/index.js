@@ -55,27 +55,25 @@ async function main() {
         "0x",
     );
 
-    // // Stream order with no close time
-    // await streamScheduler.createStreamOrder(
-    //     accounts[1],
-    //     fDaiAddress,
-    //     // Convert Date.now to seconds
-    //     Math.floor(Date.now() / 1000) + 1000,
-    //     flowRate,
-    //     0,
-    //     "0x",
-    // );
+    // // Stream order with no close time, open indefinitely.
+    await streamScheduler.createStreamOrder(
+        accounts[2],
+        fDaiAddress,
+        Math.floor(Date.now() / 1000) + 1000,
+        flowRate,
+        0,
+        "0x",
+    );
 
-    // // Stream order with no close time
-    // await streamScheduler.createStreamOrder(
-    //     accounts[1],
-    //     fDaiAddress,
-    //     // Convert Date.now to seconds
-    //     Math.floor(Date.now() / 1000) + 1000,
-    //     flowRate,
-    //     0,
-    //     "0x",
-    // );
+    // // Stream order with no open time, so should close.
+    await streamScheduler.createStreamOrder(
+        accounts[2],
+        fDaiAddress,
+        0,
+        flowRate,
+        Math.floor(Date.now() / 1000),
+        "0x",
+    );
     console.log(
         "Length of stream order hashes: ",
         await streamScheduler.getStreamOrderHashesLength(),
@@ -119,8 +117,8 @@ async function main() {
         "Contract state variable: ",
         await streamScheduler.streamOrderHashes(
             ethers.utils.solidityKeccak256(
-                ["address", "address", "address", "uint256", "uint256"],
-                [accounts[0], accounts[1], fDaiAddress, startTime1, endTime1],
+                ["address", "address", "address"],
+                [accounts[0], accounts[1], fDaiAddress],
             ),
         ),
     );

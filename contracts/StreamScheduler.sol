@@ -131,9 +131,8 @@ contract StreamScheduler {
 
         require(
             // solhint-disable-next-line not-rely-on-time
-            (startTime > block.timestamp && endTime > startTime) ||
-                (startTime == 0 && endTime != 0) ||
-                (startTime != 0 && endTime == 0),
+            // (startTime > block.timestamp && endTime > startTime) ||
+            (startTime != 0 || endTime != 0),
             "Stream time window is invalid."
         );
         // // Check if hash exists first.
@@ -156,9 +155,9 @@ contract StreamScheduler {
                 abi.encodePacked(
                     msg.sender,
                     receiver,
-                    superToken,
-                    startTime,
-                    endTime
+                    superToken
+                    // startTime,
+                    // endTime
                 )
             )
         ] = true;
@@ -207,9 +206,9 @@ contract StreamScheduler {
                     abi.encodePacked(
                         msg.sender,
                         receiver,
-                        superToken,
-                        startTime,
-                        endTime
+                        superToken
+                        // startTime,
+                        // endTime
                     )
                 )
             ],
@@ -226,20 +225,20 @@ contract StreamScheduler {
             new bytes(0)
         );
         // If there are no further operations (endTime isn’t specified) then the data should be deleted.
-        if (endTime == 0) {
-            delete streamOrderHashes[
-                keccak256(
-                    abi.encodePacked(
-                        msg.sender,
-                        receiver,
-                        superToken,
-                        startTime,
-                        endTime
-                    )
-                )
-            ];
-            streamOrderLength--;
-        }
+        // if (endTime == 0) {
+        //     delete streamOrderHashes[
+        //         keccak256(
+        //             abi.encodePacked(
+        //                 msg.sender,
+        //                 receiver,
+        //                 superToken
+        //                 // startTime,
+        //                 // endTime
+        //             )
+        //         )
+        //     ];
+        //     streamOrderLength--;
+        // }
         emit ExecuteCreateStream(
             receiver,
             msg.sender,
@@ -282,9 +281,9 @@ contract StreamScheduler {
                     abi.encodePacked(
                         msg.sender,
                         receiver,
-                        superToken,
-                        startTime,
-                        endTime
+                        superToken
+                        // startTime,
+                        // endTime
                     )
                 )
             ],
@@ -330,8 +329,13 @@ contract StreamScheduler {
         // Check if the endTime is in the past. Close the stream. Delete the stream order data.
         require(
             // solhint-disable-next-line not-rely-on-time
-            endTime > block.timestamp, // End time is in the past
-            "Stream order end time is in the past."
+            endTime <= block.timestamp,
+            "Stream order end time is not in the past."
+        );
+        require(
+            // solhint-disable-next-line not-rely-on-time
+            endTime != 0,
+            "Stream order end time should not be 0."
         );
 
         require(
@@ -340,9 +344,9 @@ contract StreamScheduler {
                     abi.encodePacked(
                         msg.sender,
                         receiver,
-                        superToken,
-                        startTime,
-                        endTime
+                        superToken
+                        // startTime,
+                        // endTime
                     )
                 )
             ],
@@ -361,9 +365,9 @@ contract StreamScheduler {
                 abi.encodePacked(
                     msg.sender,
                     receiver,
-                    superToken,
-                    startTime,
-                    endTime
+                    superToken
+                    // startTime,
+                    // endTime
                 )
             )
         ];

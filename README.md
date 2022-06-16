@@ -8,4 +8,5 @@
 
 `npx hardhat node` Runs local blockchain instance
 `npx hardhat run --network localhost scripts/deploy.js` Compiles, spins up Superfluid and deploys StreamScheduler contract
-`npx hardhat console --network localhost` Interactive console to call contract.
+`npx hardhat run --network localhost scripts/index.js` Mock create stream orders for demo.
+`npx hardhat run --network localhost scripts/bot.js` Run bot

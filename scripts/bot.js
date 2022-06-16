@@ -39,10 +39,7 @@ const parseEventDataArgs = eventData => {
 const parseToDeleteStreamOrder = rows => {
     let streamOrders = [];
     for (let i = 0; i < rows.length; i++) {
-        streamOrders.push({
-            receiver: rows[i].event_receiver,
-            sender: rows[i].event_sender,
-        });
+        streamOrders.push([rows[i].event_receiver, rows[i].event_sender]);
     }
     return streamOrders;
 };
@@ -53,56 +50,24 @@ async function processStreamOrders(streamScheduler, events) {
     let streamOrdersToUpdateOrCreate = [];
     for (let i = 0; i < events.length; i++) {
         let streamOrderData = parseEventDataArgs(events[i].args);
-        if (events[i].endTime != 0 && events[i].endTime < timeNowInSecs) {
-            console.log("Detected close stream order");
-            const doesExistOnChain = await checkStreamOrdersOnChain(
-                streamScheduler,
-                streamOrder,
-            );
-            if (!doesExistOnChain) {
-                console.log(
-                    "Detected should delete in DB but does not exist on chain, event: ",
-                    events[i],
-                );
-                continue;
-            }
-            await streamScheduler.executeDeleteStream(
-                streamOrderData.receiver,
-                streamOrderData.superToken,
-                streamOrderData.startTime,
-                streamOrderData.flowRate,
-                streamOrderData.endTime,
-                streamOrderData.userData,
-            );
-            streamOrdersToDelete.push(events[i]);
-        } else {
-            streamOrdersToUpdateOrCreate.push({
-                name: events[i].event,
-                receiver: streamOrderData.receiver,
-                sender: streamOrderData.sender,
-                blockNumber: parseInt(events[i].blockNumber),
-                flowRate: parseInt(streamOrderData.flowRate),
-                endTime: parseInt(streamOrderData.endTime),
-                startTime: parseInt(streamOrderData.startTime),
-                superToken: streamOrderData.superToken,
-                userData: streamOrderData.userData,
-            });
-        }
-    }
-
-    for (let i = 0; i < streamOrdersToUpdateOrCreate.length; i++) {
-        let streamOrder = streamOrdersToUpdateOrCreate[i];
+        let streamOrder = {
+            name: events[i].event,
+            receiver: streamOrderData.receiver,
+            sender: streamOrderData.sender,
+            blockNumber: parseInt(events[i].blockNumber),
+            flowRate: parseInt(streamOrderData.flowRate),
+            endTime: parseInt(streamOrderData.endTime),
+            startTime: parseInt(streamOrderData.startTime),
+            superToken: streamOrderData.superToken,
+            userData: streamOrderData.userData,
+        };
         console.log("Stream order: ", streamOrder);
         const shouldCreateStreamOrder = await checkIfStreamOrderExistsInDB(
             streamOrder,
         );
-        // const doesExistOnChain = await checkStreamOrdersOnChain(
-        //     streamScheduler,
-        //     streamOrder,
-        // );
         if (shouldCreateStreamOrder) {
             console.log(
-                "Did not find sender/receiver pair, creating stream order with stream order: ",
+                "Did not find sender/receiver pair, creating new stream with stream order: ",
                 streamOrder,
             );
             await storeStreamOrdersIntoDB([streamOrder]);
@@ -115,22 +80,93 @@ async function processStreamOrders(streamScheduler, events) {
                 streamOrder.userData,
             );
         } else {
-            console.log(
-                "Found sender/receiver pair, updating stream order with stream order: ",
+            console.log("Flow exists.");
+            const doesExistOnChain = await checkStreamOrdersOnChain(
+                streamScheduler,
                 streamOrder,
             );
-            await streamScheduler.executeUpdateStream(
-                streamOrder.receiver,
-                streamOrder.superToken,
-                streamOrder.startTime,
-                streamOrder.flowRate,
-                streamOrder.endTime,
-                streamOrder.userData,
-            );
-            // Update stream order in database.
-            await updateStreamOrderInDB(streamOrder);
+            if (!doesExistOnChain) {
+                console.log(
+                    "Detected should delete in DB but does not exist on chain, event: ",
+                    events[i],
+                );
+                continue;
+            }
+            if (
+                (streamOrder.endTime != 0 &&
+                    streamOrder.endTime < timeNowInSecs) ||
+                streamOrder.startTime == 0
+            ) {
+                console.log("Detected close stream order", streamOrder);
+                await streamScheduler.executeDeleteStream(
+                    streamOrder.receiver,
+                    streamOrder.superToken,
+                    streamOrder.startTime,
+                    streamOrder.flowRate,
+                    streamOrder.endTime,
+                    streamOrder.userData,
+                );
+                streamOrdersToDelete.push([
+                    streamOrder.receiver,
+                    streamOrder.sender,
+                ]);
+            } else {
+                console.log("Detected update stream order: ", streamOrder);
+                await streamScheduler.executeUpdateStream(
+                    streamOrder.receiver,
+                    streamOrder.superToken,
+                    streamOrder.startTime,
+                    streamOrder.flowRate,
+                    streamOrder.endTime,
+                    streamOrder.userData,
+                );
+                // Update stream order in database.
+                await updateStreamOrderInDB(streamOrder);
+            }
         }
     }
+
+    // for (let i = 0; i < streamOrdersToUpdateOrCreate.length; i++) {
+    // let streamOrder = streamOrdersToUpdateOrCreate[i];
+    // console.log("Stream order: ", streamOrder);
+    // const shouldCreateStreamOrder = await checkIfStreamOrderExistsInDB(
+    //     streamOrder,
+    // );
+    // // const doesExistOnChain = await checkStreamOrdersOnChain(
+    // //     streamScheduler,
+    // //     streamOrder,
+    // // );
+    // if (shouldCreateStreamOrder) {
+    //     console.log(
+    //         "Did not find sender/receiver pair, creating stream order with stream order: ",
+    //         streamOrder,
+    //     );
+    //     await storeStreamOrdersIntoDB([streamOrder]);
+    //     await streamScheduler.executeCreateStream(
+    //         streamOrder.receiver,
+    //         streamOrder.superToken,
+    //         streamOrder.startTime,
+    //         streamOrder.flowRate,
+    //         streamOrder.endTime,
+    //         streamOrder.userData,
+    //     );
+    // } else {
+    //     console.log(
+    //         "Found sender/receiver pair, updating stream order with stream order: ",
+    //         streamOrder,
+    //     );
+    //     await streamScheduler.executeUpdateStream(
+    //         streamOrder.receiver,
+    //         streamOrder.superToken,
+    //         streamOrder.startTime,
+    //         streamOrder.flowRate,
+    //         streamOrder.endTime,
+    //         streamOrder.userData,
+    //     );
+    //     // Update stream order in database.
+    //     await updateStreamOrderInDB(streamOrder);
+    // }
+    // }
 
     // Delete stream orders that have been closed from the database.
     streamOrdersToDelete.concat(await getExpiredStreamOrdersFromDB());
@@ -142,13 +178,13 @@ async function processStreamOrders(streamScheduler, events) {
 async function checkStreamOrdersOnChain(streamScheduler, streamOrder) {
     return await streamScheduler.streamOrderHashes(
         ethers.utils.solidityKeccak256(
-            ["address", "address", "address", "uint256", "uint256"],
+            ["address", "address", "address"],
             [
                 streamOrder.sender,
                 streamOrder.receiver,
                 streamOrder.superToken,
-                streamOrder.startTime,
-                streamOrder.endTime,
+                // streamOrder.startTime,
+                // streamOrder.endTime,
             ],
         ),
     );
@@ -158,17 +194,13 @@ async function deleteStreamOrdersFromDB(streamOrdersToDelete) {
     const client = new pg.Client({
         connectionString: connectionString,
     });
-    const queryArray = Array(streamOrdersToDelete.length).fill("(?)");
-    const sql = format(
-        `DELETE FROM stream_orders 
-        WHERE (event_receiver, event_sender)
-        IN (${queryArray.join(",")})`,
-        streamOrdersToDelete,
-    );
-    console.log("DELETE SQL: ", sql);
     try {
         await client.connect();
-        const result = await client.query(sql);
+        for (let i = 0; i < streamOrdersToDelete.length; i++) {
+            const streamOrder = streamOrdersToDelete[i];
+            const query = `DELETE FROM stream_orders WHERE event_receiver = '${streamOrder[0]}' AND event_sender = '${streamOrder[1]}'`;
+            await client.query(query);
+        }
         console.log("Deleted stream orders from database");
     } catch (e) {
         console.log("Error deleting stream orders into database, " + e);
