@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: postgres
+    container_name: posty
+    environment:
+      POSTGRES_DB: superfluid
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_PORT: 5432
+    ports:
+      - "5432:5432"
+    restart: unless-stopped

@@ -2,7 +2,7 @@
 const pg = require("pg");
 const format = require("pg-format");
 const connectionString =
-    "postgres://superfluid:password@localhost:5432/superfluid";
+    "postgres://postgres:password@localhost:5432/superfluid";
 const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
 
 async function runBot(streamScheduler) {
@@ -275,6 +275,7 @@ async function getLatestBlockNumberFromDB() {
     const client = new pg.Client({
         connectionString: connectionString,
     });
+    console.log("DB client: ", client);
     const sql = `SELECT max(event_block_number) as event_block_number FROM stream_orders`;
     try {
         await client.connect();
