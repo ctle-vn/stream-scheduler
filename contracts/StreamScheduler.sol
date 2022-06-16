@@ -145,7 +145,8 @@ contract StreamScheduler {
                         receiver,
                         superToken,
                         startTime,
-                        endTime
+                        endTime,
+                        flowRate
                     )
                 )
             ],
@@ -158,7 +159,8 @@ contract StreamScheduler {
                     receiver,
                     superToken,
                     startTime,
-                    endTime
+                    endTime,
+                    flowRate
                 )
             )
         ] = true;
@@ -209,7 +211,8 @@ contract StreamScheduler {
                         receiver,
                         superToken,
                         startTime,
-                        endTime
+                        endTime,
+                        flowRate
                     )
                 )
             ],
@@ -234,7 +237,8 @@ contract StreamScheduler {
                         receiver,
                         superToken,
                         startTime,
-                        endTime
+                        endTime,
+                        flowRate
                     )
                 )
             ];
@@ -284,7 +288,8 @@ contract StreamScheduler {
                         receiver,
                         superToken,
                         startTime,
-                        endTime
+                        endTime,
+                        flowRate
                     )
                 )
             ],
@@ -342,7 +347,8 @@ contract StreamScheduler {
                         receiver,
                         superToken,
                         startTime,
-                        endTime
+                        endTime,
+                        flowRate
                     )
                 )
             ],
@@ -363,7 +369,8 @@ contract StreamScheduler {
                     receiver,
                     superToken,
                     startTime,
-                    endTime
+                    endTime,
+                    flowRate
                 )
             )
         ];

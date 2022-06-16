@@ -131,7 +131,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                         alice,
                         superToken,
                         startTime,
-                        startTime + 3600
+                        startTime + 3600,
+                        int96(1000)
                     )
                 )
             )
@@ -180,7 +181,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                         alice,
                         superToken,
                         uint256(0),
-                        startTime + 3600
+                        startTime + 3600,
+                        int96(1000)
                     )
                 )
             )
@@ -201,7 +203,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                         alice,
                         superToken,
                         startTime,
-                        uint256(0)
+                        uint256(0),
+                        int96(1000)
                     )
                 )
             )
@@ -216,7 +219,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             address(this),
             superToken,
             uint256(0),
-            1000,
+            int96(1000),
             startTime + 3600,
             bytes("0x00")
         );
@@ -228,7 +231,7 @@ contract StreamSchedulerTest is SuperfluidTester {
                     alice,
                     superToken,
                     uint256(0),
-                    1000,
+                    int96(1000),
                     startTime + 3600,
                     bytes("0x00")
                 )
@@ -238,7 +241,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             alice,
             superToken,
             uint256(0),
-            1000,
+            int96(1000),
             startTime + 3600,
             bytes("0x00")
         );
@@ -250,7 +253,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                         alice,
                         superToken,
                         uint256(0),
-                        startTime + 3600
+                        startTime + 3600,
+                        int96(1000)
                     )
                 )
             )
@@ -261,7 +265,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             alice,
             superToken,
             uint256(0),
-            1000,
+            int96(1000),
             startTime + 3600,
             bytes("0x00")
         );
@@ -690,7 +694,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                         alice,
                         superToken,
                         startTime,
-                        startTime + 3600
+                        startTime + 3600,
+                        int96(1000)
                     )
                 )
             )
@@ -785,7 +790,8 @@ contract StreamSchedulerTest is SuperfluidTester {
                         alice,
                         superToken,
                         startTime,
-                        startTime + 3600
+                        startTime + 3600,
+                        int96(1000)
                     )
                 )
             )
