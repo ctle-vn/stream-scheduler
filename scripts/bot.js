@@ -61,15 +61,16 @@ async function processStreamOrders(streamScheduler, events) {
             superToken: streamOrderData.superToken,
             userData: streamOrderData.userData,
         };
-        console.log("Stream order: ", streamOrder);
+        // console.log("Stream order: ", streamOrder);
         const shouldCreateStreamOrder = await checkIfStreamOrderExistsInDB(
             streamOrder,
         );
         if (shouldCreateStreamOrder) {
-            console.log(
-                "Did not find sender/receiver pair, creating new stream with stream order: ",
-                streamOrder,
-            );
+            console.log("============ EXECUTE CREATE STREAM ============");
+            //  console.log(
+            //     "Did not find sender/receiver pair, creating new stream with stream order: ",
+            //     streamOrder,
+            // );
             await storeStreamOrdersIntoDB([streamOrder]);
             await streamScheduler.executeCreateStream(
                 streamOrder.receiver,
@@ -97,7 +98,8 @@ async function processStreamOrders(streamScheduler, events) {
                     streamOrder.endTime < timeNowInSecs) ||
                 streamOrder.startTime == 0
             ) {
-                console.log("Detected close stream order", streamOrder);
+                console.log("============ EXECUTE DELETE STREAM ============");
+                // console.log("Detected close stream order", streamOrder);
                 await streamScheduler.executeDeleteStream(
                     streamOrder.receiver,
                     streamOrder.superToken,
@@ -111,7 +113,8 @@ async function processStreamOrders(streamScheduler, events) {
                     streamOrder.sender,
                 ]);
             } else {
-                console.log("Detected update stream order: ", streamOrder);
+                console.log("============ EXECUTE UPDATE STREAM ============");
+                // console.log("Detected update stream order: ", streamOrder);
                 await streamScheduler.executeUpdateStream(
                     streamOrder.receiver,
                     streamOrder.superToken,
@@ -260,7 +263,6 @@ async function updateStreamOrderInDB(streamOrder) {
     const sql = `UPDATE stream_orders SET
             event_flow_rate = ${streamOrder.flowRate}
             WHERE event_sender = '${streamOrder.sender}' AND event_receiver = '${streamOrder.receiver}'`;
-    console.log("SQL: ", sql);
     try {
         await client.connect();
         await client.query(sql);
@@ -280,7 +282,7 @@ async function getLatestBlockNumberFromDB() {
     try {
         await client.connect();
         const result = await client.query(sql);
-        if (result.rowCount == 0) {
+        if (result.rows[0].event_block_number === null) {
             console.log(
                 "No data in the database, returning default block of 0.",
             );
@@ -312,7 +314,7 @@ async function getPastEventsFromContract(streamScheduler, latestBlockNumber) {
 
 async function storeStreamOrdersIntoDB(events) {
     let streamOrderList = [];
-    console.log("events: ", events);
+    console.log("Inserting into DB");
     for (let i = 0; i < events.length; i++) {
         const event = events[i];
         const eventName = event.name;
@@ -332,7 +334,7 @@ async function storeStreamOrdersIntoDB(events) {
         streamOrderList.push(blob);
     }
     // Insert the stream orders into the database.
-    console.log("Stream order list: ", streamOrderList);
+    // console.log("Stream order list: ", streamOrderList);
     if (streamOrderList.length > 0) {
         await insertStreamOrdersIntoDB(streamOrderList);
     }
