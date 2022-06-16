@@ -2,7 +2,7 @@
 const pg = require("pg");
 const format = require("pg-format");
 const connectionString =
-    "postgres://postgres:password@localhost:5432/superfluid";
+    "postgres://postgres:password@localhost:5432/superfluid"; // Docker Postgres DB Connection.
 const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
 
 async function runBot(streamScheduler) {

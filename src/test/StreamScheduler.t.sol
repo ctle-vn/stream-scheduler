@@ -129,9 +129,10 @@ contract StreamSchedulerTest is SuperfluidTester {
                     abi.encodePacked(
                         address(this),
                         alice,
-                        superToken
-                        // startTime,
-                        // startTime + 3600
+                        superToken,
+                        startTime,
+                        startTime + 3600,
+                        int96(1000)
                     )
                 )
             )
@@ -178,9 +179,10 @@ contract StreamSchedulerTest is SuperfluidTester {
                     abi.encodePacked(
                         address(this),
                         alice,
-                        superToken
-                        // uint256(0),
-                        // startTime + 3600
+                        superToken,
+                        uint256(0),
+                        startTime + 3600,
+                        int96(1000)
                     )
                 )
             )
@@ -199,9 +201,10 @@ contract StreamSchedulerTest is SuperfluidTester {
                     abi.encodePacked(
                         address(this),
                         alice,
-                        superToken
-                        // startTime,
-                        // uint256(0)
+                        superToken,
+                        startTime,
+                        uint256(0),
+                        int96(1000)
                     )
                 )
             )
@@ -533,12 +536,20 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime + 3600,
             bytes("0x00")
         );
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1500,
+            startTime + 3600,
+            bytes("0x00")
+        );
         vm.expectRevert(bytes("E_NO_OPERATOR_UPDATE_FLOW"));
         streamScheduler.executeUpdateStream(
             alice,
             superToken,
             startTime,
-            1000,
+            1500,
             startTime + 3600,
             bytes("0x00")
         );
@@ -552,6 +563,21 @@ contract StreamSchedulerTest is SuperfluidTester {
             1000,
             startTime + 3600,
             bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+        assertTrue(
+            streamScheduler.getStreamOrderHashesByValue(
+                keccak256(
+                    abi.encodePacked(
+                        address(this),
+                        alice,
+                        superToken,
+                        startTime,
+                        startTime + 3600,
+                        int96(1000)
+                    )
+                )
+            )
         );
 
         host.callAgreement(
@@ -601,23 +627,11 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime + 3600,
             bytes("0x00")
         );
-        assertTrue(
-            streamScheduler.getStreamOrderHashesByValue(
-                keccak256(
-                    abi.encodePacked(
-                        address(this),
-                        alice,
-                        superToken
-                        // startTime,
-                        // startTime + 3600
-                    )
-                )
-            )
-        );
-        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 
     function testExecuteUpdateStream() public {
+        // Create stream order to create flow.
         streamScheduler.createStreamOrder(
             alice,
             superToken,
@@ -626,6 +640,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime + 3600,
             bytes("0x00")
         );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
         host.callAgreement(
             cfa,
             abi.encodeCall(
@@ -648,7 +663,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime + 3600,
             bytes("0x00")
         );
-
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
         host.callAgreement(
             cfa,
             abi.encodeCall(
@@ -688,6 +703,17 @@ contract StreamSchedulerTest is SuperfluidTester {
                 )
             )
         );
+        // Create stream order to update flow.
+        streamScheduler.createStreamOrder(
+            alice,
+            superToken,
+            startTime,
+            1500,
+            startTime + 3600,
+            bytes("0x00")
+        );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+
         streamScheduler.executeUpdateStream(
             alice,
             superToken,
@@ -696,20 +722,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime + 3600,
             bytes("0x00")
         );
-        assertTrue(
-            streamScheduler.getStreamOrderHashesByValue(
-                keccak256(
-                    abi.encodePacked(
-                        address(this),
-                        alice,
-                        superToken
-                        // startTime,
-                        // startTime + 3600
-                    )
-                )
-            )
-        );
-        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
     }
 
     function testExecuteDeleteStream() public {
@@ -721,6 +734,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             0,
             bytes("0x00")
         );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+
         host.callAgreement(
             cfa,
             abi.encodeCall(
@@ -743,6 +758,7 @@ contract StreamSchedulerTest is SuperfluidTester {
             0,
             bytes("0x00")
         );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 0);
 
         host.callAgreement(
             cfa,
@@ -767,6 +783,8 @@ contract StreamSchedulerTest is SuperfluidTester {
             startTime - 1,
             bytes("0x00")
         );
+        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+
         vm.expectEmit(true, true, false, true);
         emit ExecuteDeleteStream(
             alice,

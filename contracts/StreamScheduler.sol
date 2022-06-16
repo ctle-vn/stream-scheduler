@@ -131,33 +131,19 @@ contract StreamScheduler {
 
         require(
             // solhint-disable-next-line not-rely-on-time
-            // (startTime > block.timestamp && endTime > startTime) ||
             (startTime != 0 || endTime != 0),
             "Stream time window is invalid."
         );
-        // // Check if hash exists first.
-        // require(
-        //     !streamOrderHashes[
-        //         keccak256(
-        //             abi.encodePacked(
-        //                 msg.sender,
-        //                 receiver,
-        //                 superToken,
-        //                 startTime,
-        //                 endTime
-        //             )
-        //         )
-        //     ],
-        //     "Stream order already exists."
-        // );
+
         streamOrderHashes[
             keccak256(
                 abi.encodePacked(
                     msg.sender,
                     receiver,
-                    superToken
-                    // startTime,
-                    // endTime
+                    superToken,
+                    startTime,
+                    endTime,
+                    flowRate
                 )
             )
         ] = true;
@@ -206,9 +192,10 @@ contract StreamScheduler {
                     abi.encodePacked(
                         msg.sender,
                         receiver,
-                        superToken
-                        // startTime,
-                        // endTime
+                        superToken,
+                        startTime,
+                        endTime,
+                        flowRate
                     )
                 )
             ],
@@ -224,21 +211,19 @@ contract StreamScheduler {
             ),
             new bytes(0)
         );
-        // If there are no further operations (endTime isn’t specified) then the data should be deleted.
-        // if (endTime == 0) {
-        //     delete streamOrderHashes[
-        //         keccak256(
-        //             abi.encodePacked(
-        //                 msg.sender,
-        //                 receiver,
-        //                 superToken
-        //                 // startTime,
-        //                 // endTime
-        //             )
-        //         )
-        //     ];
-        //     streamOrderLength--;
-        // }
+        delete streamOrderHashes[
+            keccak256(
+                abi.encodePacked(
+                    msg.sender,
+                    receiver,
+                    superToken,
+                    startTime,
+                    endTime,
+                    flowRate
+                )
+            )
+        ];
+        streamOrderLength--;
         emit ExecuteCreateStream(
             receiver,
             msg.sender,
@@ -281,9 +266,10 @@ contract StreamScheduler {
                     abi.encodePacked(
                         msg.sender,
                         receiver,
-                        superToken
-                        // startTime,
-                        // endTime
+                        superToken,
+                        startTime,
+                        endTime,
+                        flowRate
                     )
                 )
             ],
@@ -298,6 +284,19 @@ contract StreamScheduler {
             ),
             new bytes(0)
         );
+        delete streamOrderHashes[
+            keccak256(
+                abi.encodePacked(
+                    msg.sender,
+                    receiver,
+                    superToken,
+                    startTime,
+                    endTime,
+                    flowRate
+                )
+            )
+        ];
+        streamOrderLength--;
         emit ExecuteUpdateStream(
             receiver,
             msg.sender,
@@ -344,9 +343,10 @@ contract StreamScheduler {
                     abi.encodePacked(
                         msg.sender,
                         receiver,
-                        superToken
-                        // startTime,
-                        // endTime
+                        superToken,
+                        startTime,
+                        endTime,
+                        flowRate
                     )
                 )
             ],
@@ -365,9 +365,10 @@ contract StreamScheduler {
                 abi.encodePacked(
                     msg.sender,
                     receiver,
-                    superToken
-                    // startTime,
-                    // endTime
+                    superToken,
+                    startTime,
+                    endTime,
+                    flowRate
                 )
             )
         ];
