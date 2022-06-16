@@ -55,6 +55,17 @@ async function processStreamOrders(streamScheduler, events) {
         let streamOrderData = parseEventDataArgs(events[i].args);
         if (events[i].endTime != 0 && events[i].endTime < timeNowInSecs) {
             console.log("Detected close stream order");
+            const doesExistOnChain = await checkStreamOrdersOnChain(
+                streamScheduler,
+                streamOrder,
+            );
+            if (!doesExistOnChain) {
+                console.log(
+                    "Detected should delete in DB but does not exist on chain, event: ",
+                    events[i],
+                );
+                continue;
+            }
             await streamScheduler.executeDeleteStream(
                 streamOrderData.receiver,
                 streamOrderData.superToken,
@@ -81,10 +92,15 @@ async function processStreamOrders(streamScheduler, events) {
 
     for (let i = 0; i < streamOrdersToUpdateOrCreate.length; i++) {
         let streamOrder = streamOrdersToUpdateOrCreate[i];
+        console.log("Stream order: ", streamOrder);
         const shouldCreateStreamOrder = await checkIfStreamOrderExistsInDB(
             streamOrder,
         );
-        if (shouldCreateStreamOrder) {
+        const doesExistOnChain = await checkStreamOrdersOnChain(
+            streamScheduler,
+            streamOrder,
+        );
+        if (shouldCreateStreamOrder && !doesExistOnChain) {
             console.log(
                 "Did not find sender/receiver pair, creating stream order with stream order: ",
                 streamOrder,
@@ -129,6 +145,22 @@ async function processStreamOrders(streamScheduler, events) {
     if (streamOrdersToDelete.length > 0) {
         await deleteStreamOrdersFromDB(streamOrdersToDelete);
     }
+}
+
+async function checkStreamOrdersOnChain(streamScheduler, streamOrder) {
+    return await streamScheduler.streamOrderHashes(
+        ethers.utils.solidityKeccak256(
+            ["address", "address", "address", "uint256", "uint256", "int96"],
+            [
+                streamOrder.sender,
+                streamOrder.receiver,
+                streamOrder.superToken,
+                streamOrder.startTime,
+                streamOrder.endTime,
+                streamOrder.flowRate,
+            ],
+        ),
+    );
 }
 
 async function deleteStreamOrdersFromDB(streamOrdersToDelete) {
@@ -183,7 +215,8 @@ async function checkIfStreamOrderExistsInDB(streamOrder) {
         await client.connect();
         const sql = `select count(*) from stream_orders 
         where stream_orders.event_receiver = '${streamOrder.receiver}'
-        and stream_orders.event_sender = '${streamOrder.sender}'`;
+        and stream_orders.event_sender = '${streamOrder.sender}
+        and stream_orders.event_flow_rate = ${streamOrder.flowRate}'`;
         const result = await client.query(sql);
         await client.end();
         return result.rows[0].count == 0 ? true : false;
@@ -203,7 +236,7 @@ async function updateStreamOrderInDB(streamOrder) {
     });
     const sql = `UPDATE stream_orders SET
             event_flow_rate = ?,
-            WHERE event_sender = ? AND event_receiver = ?`;
+            WHERE event_sender = '?' AND event_receiver = '?'`;
     try {
         await client.connect();
         const values = [

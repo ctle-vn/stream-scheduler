@@ -18,7 +18,7 @@ const provider = new ethers.providers.JsonRpcProvider(url);
 const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
 const fDaiAddress = "0x1f65B7b9b3ADB4354fF76fD0582bB6b0d046a41c";
 
-const flowRate = "1000000000000";
+const flowRate = "100000000";
 
 async function main() {
     const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
@@ -119,8 +119,22 @@ async function main() {
         "Contract state variable: ",
         await streamScheduler.streamOrderHashes(
             ethers.utils.solidityKeccak256(
-                ["address", "address", "address", "uint256", "uint256"],
-                [accounts[0], accounts[1], fDaiAddress, startTime1, endTime1],
+                [
+                    "address",
+                    "address",
+                    "address",
+                    "uint256",
+                    "uint256",
+                    "int96",
+                ],
+                [
+                    accounts[0],
+                    accounts[1],
+                    fDaiAddress,
+                    startTime1,
+                    endTime1,
+                    flowRate,
+                ],
             ),
         ),
     );
