@@ -119,22 +119,8 @@ async function main() {
         "Contract state variable: ",
         await streamScheduler.streamOrderHashes(
             ethers.utils.solidityKeccak256(
-                [
-                    "address",
-                    "address",
-                    "address",
-                    "uint256",
-                    "uint256",
-                    "int96",
-                ],
-                [
-                    accounts[0],
-                    accounts[1],
-                    fDaiAddress,
-                    startTime1,
-                    endTime1,
-                    flowRate,
-                ],
+                ["address", "address", "address", "uint256", "uint256"],
+                [accounts[0], accounts[1], fDaiAddress, startTime1, endTime1],
             ),
         ),
     );

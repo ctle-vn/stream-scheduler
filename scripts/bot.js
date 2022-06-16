@@ -96,15 +96,16 @@ async function processStreamOrders(streamScheduler, events) {
         const shouldCreateStreamOrder = await checkIfStreamOrderExistsInDB(
             streamOrder,
         );
-        const doesExistOnChain = await checkStreamOrdersOnChain(
-            streamScheduler,
-            streamOrder,
-        );
-        if (shouldCreateStreamOrder && !doesExistOnChain) {
+        // const doesExistOnChain = await checkStreamOrdersOnChain(
+        //     streamScheduler,
+        //     streamOrder,
+        // );
+        if (shouldCreateStreamOrder) {
             console.log(
                 "Did not find sender/receiver pair, creating stream order with stream order: ",
                 streamOrder,
             );
+            await storeStreamOrdersIntoDB([streamOrder]);
             await streamScheduler.executeCreateStream(
                 streamOrder.receiver,
                 streamOrder.superToken,
@@ -132,15 +133,6 @@ async function processStreamOrders(streamScheduler, events) {
     }
 
     // Delete stream orders that have been closed from the database.
-    // Store all the stream orders back into the database.
-    await storeStreamOrdersIntoDB(
-        // Don't store the stream orders that will be deleted.
-        events.filter(o1 => {
-            return !streamOrdersToDelete.some(o2 => {
-                return o1.blockNumber === o2.blockNumber;
-            });
-        }),
-    );
     streamOrdersToDelete.concat(await getExpiredStreamOrdersFromDB());
     if (streamOrdersToDelete.length > 0) {
         await deleteStreamOrdersFromDB(streamOrdersToDelete);
@@ -150,7 +142,7 @@ async function processStreamOrders(streamScheduler, events) {
 async function checkStreamOrdersOnChain(streamScheduler, streamOrder) {
     return await streamScheduler.streamOrderHashes(
         ethers.utils.solidityKeccak256(
-            ["address", "address", "address", "uint256", "uint256", "int96"],
+            ["address", "address", "address", "uint256", "uint256"],
             [
                 streamOrder.sender,
                 streamOrder.receiver,
@@ -214,8 +206,7 @@ async function checkIfStreamOrderExistsInDB(streamOrder) {
         await client.connect();
         const sql = `select count(*) from stream_orders 
         where stream_orders.event_receiver = '${streamOrder.receiver}'
-        and stream_orders.event_sender = '${streamOrder.sender}
-        and stream_orders.event_flow_rate = ${streamOrder.flowRate}'`;
+        and stream_orders.event_sender = '${streamOrder.sender}'`;
         const result = await client.query(sql);
         await client.end();
         return result.rows[0].count == 0 ? true : false;
@@ -234,16 +225,12 @@ async function updateStreamOrderInDB(streamOrder) {
         connectionString: connectionString,
     });
     const sql = `UPDATE stream_orders SET
-            event_flow_rate = ?,
-            WHERE event_sender = '?' AND event_receiver = '?'`;
+            event_flow_rate = ${streamOrder.flowRate}
+            WHERE event_sender = '${streamOrder.sender}' AND event_receiver = '${streamOrder.receiver}'`;
+    console.log("SQL: ", sql);
     try {
         await client.connect();
-        const values = [
-            streamOrder.flowRate,
-            streamOrder.sender,
-            streamOrder.receiver,
-        ];
-        await client.query(sql, values);
+        await client.query(sql);
         console.log("Updated stream order in database");
     } catch (e) {
         console.log("Error updating stream order in db, error: " + e);
@@ -293,23 +280,22 @@ async function getPastEventsFromContract(streamScheduler, latestBlockNumber) {
 
 async function storeStreamOrdersIntoDB(events) {
     let streamOrderList = [];
+    console.log("events: ", events);
     for (let i = 0; i < events.length; i++) {
         const event = events[i];
-        const eventData = event.args;
-        const streamOrderData = parseEventDataArgs(eventData);
-        const eventName = event.event;
+        const eventName = event.name;
         const eventBlockNumber = event.blockNumber;
         const eventTimestamp = event.timestamp;
         const blob = [
             eventName,
             eventBlockNumber,
-            streamOrderData.receiver,
-            streamOrderData.sender,
-            streamOrderData.superToken,
-            parseInt(streamOrderData.flowRate.toString()),
-            parseInt(streamOrderData.startTime.toString()),
-            parseInt(streamOrderData.endTime.toString()),
-            streamOrderData.userData,
+            event.receiver,
+            event.sender,
+            event.superToken,
+            event.flowRate,
+            event.startTime,
+            event.endTime,
+            event.userData,
         ];
         streamOrderList.push(blob);
     }

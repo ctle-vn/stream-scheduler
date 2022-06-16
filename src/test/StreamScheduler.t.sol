@@ -209,64 +209,64 @@ contract StreamSchedulerTest is SuperfluidTester {
         assertTrue(streamScheduler.getStreamOrderHashesLength() == 2);
     }
 
-    function testCannotCreateStreamOrderWhenDuplicateStreamOrder() public {
-        vm.expectEmit(true, true, false, true);
-        emit CreateStreamOrder(
-            alice,
-            address(this),
-            superToken,
-            uint256(0),
-            int96(1000),
-            startTime + 3600,
-            bytes("0x00")
-        );
-        vm.expectCall(
-            address(streamScheduler),
-            abi.encodeCall(
-                streamScheduler.createStreamOrder,
-                (
-                    alice,
-                    superToken,
-                    uint256(0),
-                    int96(1000),
-                    startTime + 3600,
-                    bytes("0x00")
-                )
-            )
-        );
-        streamScheduler.createStreamOrder(
-            alice,
-            superToken,
-            uint256(0),
-            int96(1000),
-            startTime + 3600,
-            bytes("0x00")
-        );
-        assertTrue(
-            streamScheduler.getStreamOrderHashesByValue(
-                keccak256(
-                    abi.encodePacked(
-                        address(this),
-                        alice,
-                        superToken,
-                        uint256(0),
-                        startTime + 3600
-                    )
-                )
-            )
-        );
-        // Expect revert on when duplicate stream order is attempted.
-        vm.expectRevert(bytes("Stream order already exists."));
-        streamScheduler.createStreamOrder(
-            alice,
-            superToken,
-            uint256(0),
-            int96(1000),
-            startTime + 3600,
-            bytes("0x00")
-        );
-        assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
-    }
+    // function testCannotCreateStreamOrderWhenDuplicateStreamOrder() public {
+    //     vm.expectEmit(true, true, false, true);
+    //     emit CreateStreamOrder(
+    //         alice,
+    //         address(this),
+    //         superToken,
+    //         uint256(0),
+    //         int96(1000),
+    //         startTime + 3600,
+    //         bytes("0x00")
+    //     );
+    //     vm.expectCall(
+    //         address(streamScheduler),
+    //         abi.encodeCall(
+    //             streamScheduler.createStreamOrder,
+    //             (
+    //                 alice,
+    //                 superToken,
+    //                 uint256(0),
+    //                 int96(1000),
+    //                 startTime + 3600,
+    //                 bytes("0x00")
+    //             )
+    //         )
+    //     );
+    //     streamScheduler.createStreamOrder(
+    //         alice,
+    //         superToken,
+    //         uint256(0),
+    //         int96(1000),
+    //         startTime + 3600,
+    //         bytes("0x00")
+    //     );
+    //     assertTrue(
+    //         streamScheduler.getStreamOrderHashesByValue(
+    //             keccak256(
+    //                 abi.encodePacked(
+    //                     address(this),
+    //                     alice,
+    //                     superToken,
+    //                     uint256(0),
+    //                     startTime + 3600
+    //                 )
+    //             )
+    //         )
+    //     );
+    //     // Expect revert on when duplicate stream order is attempted.
+    //     vm.expectRevert(bytes("Stream order already exists."));
+    //     streamScheduler.createStreamOrder(
+    //         alice,
+    //         superToken,
+    //         uint256(0),
+    //         int96(1000),
+    //         startTime + 3600,
+    //         bytes("0x00")
+    //     );
+    //     assertTrue(streamScheduler.getStreamOrderHashesLength() == 1);
+    // }
 
     function testCannotCreateStreamOrderWhenSenderSameAsReceiver() public {
         // Expect revert on receiver same as sender.

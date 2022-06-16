@@ -136,21 +136,21 @@ contract StreamScheduler {
                 (startTime != 0 && endTime == 0),
             "Stream time window is invalid."
         );
-        // Check if hash exists first.
-        require(
-            !streamOrderHashes[
-                keccak256(
-                    abi.encodePacked(
-                        msg.sender,
-                        receiver,
-                        superToken,
-                        startTime,
-                        endTime
-                    )
-                )
-            ],
-            "Stream order already exists."
-        );
+        // // Check if hash exists first.
+        // require(
+        //     !streamOrderHashes[
+        //         keccak256(
+        //             abi.encodePacked(
+        //                 msg.sender,
+        //                 receiver,
+        //                 superToken,
+        //                 startTime,
+        //                 endTime
+        //             )
+        //         )
+        //     ],
+        //     "Stream order already exists."
+        // );
         streamOrderHashes[
             keccak256(
                 abi.encodePacked(
