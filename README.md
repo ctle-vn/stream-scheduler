@@ -16,8 +16,10 @@ docker-compose up
 ```
 
 If you want to confirm data in container:
+`docker ps` To see your containers
 `docker exec -it <container-id> /bin/sh` Connect to container
 `su - postgres` Change as postgres user
+`psql` Run psql interactive terminal
 `\c superfluid` Connect to superfluid database
 `SELECT * FROM stream_orders;` Query table.
 

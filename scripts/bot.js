@@ -178,13 +178,14 @@ async function processStreamOrders(streamScheduler, events) {
 async function checkStreamOrdersOnChain(streamScheduler, streamOrder) {
     return await streamScheduler.streamOrderHashes(
         ethers.utils.solidityKeccak256(
-            ["address", "address", "address"],
+            ["address", "address", "address", "uint256", "uint256", "int96"],
             [
                 streamOrder.sender,
                 streamOrder.receiver,
                 streamOrder.superToken,
-                // streamOrder.startTime,
-                // streamOrder.endTime,
+                streamOrder.startTime,
+                streamOrder.endTime,
+                streamOrder.flowRate,
             ],
         ),
     );
@@ -275,7 +276,6 @@ async function getLatestBlockNumberFromDB() {
     const client = new pg.Client({
         connectionString: connectionString,
     });
-    console.log("DB client: ", client);
     const sql = `SELECT max(event_block_number) as event_block_number FROM stream_orders`;
     try {
         await client.connect();
@@ -298,7 +298,6 @@ async function getLatestBlockNumberFromDB() {
         );
         return 0;
     } finally {
-        console.log("ending");
         await client.end();
     }
 }
