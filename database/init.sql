@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS stream_orders (
    event_user_data varchar(100)
 );
 
--- Insert some test data into stream_orders
+-- Insert expired stream_order
 -- INSERT INTO stream_orders (
 --     event_name,
 --     event_receiver,
@@ -25,15 +25,19 @@ CREATE TABLE IF NOT EXISTS stream_orders (
 --     event_block_number,
 --     event_flow_rate,
 --     event_end_time,
---     event_start_time
+--     event_start_time,
+--     event_super_token,
+--     event_user_data
 -- ) VALUES (
 --     'test',
---     'fake_receiver',
---     'fake_senderroo',
+--     '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199',
+--     '0xdD2FD4581271e230360230F9337D5c0430Bf44C0',
 --     0,
 --     1000000000000,
---     1656266815,
---     1655267815
+--     1653421260,
+--     1652267815,
+--     '0x1f65B7b9b3ADB4354fF76fD0582bB6b0d046a41c',
+--     '0x00'
 -- );
 
 -- INSERT INTO stream_orders (

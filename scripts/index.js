@@ -1,17 +1,7 @@
 // scripts/index.js
-const { Framework } = require("@superfluid-finance/sdk-core");
-const StreamSchedulerJSON = require("../artifacts/contracts/StreamScheduler.sol/StreamScheduler.json");
-const StreamSchedulerABI = StreamSchedulerJSON.abi;
-const ConstantFlowAgreementV1JSON = require("../artifacts/@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IConstantFlowAgreementV1.sol/IConstantFlowAgreementV1.json");
-const ConstantFlowAgreementV1ABI = ConstantFlowAgreementV1JSON.abi;
-const SuperfluidJSON = require("../artifacts/@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol/ISuperfluid.json");
 const { ethers } = require("hardhat");
-const SuperfluidABI = SuperfluidJSON.abi;
 
 require("dotenv").config();
-
-const url = "http://localhost:8545";
-const provider = new ethers.providers.JsonRpcProvider(url);
 
 // Copy + Pasted from output of
 // npx hardhat run --network localhost scripts/deploy.js
@@ -36,6 +26,9 @@ async function main() {
     const endTime1 = Math.floor(Date.now() / 1000) + 1000000;
     console.log("================ CREATE STREAM ORDER =================");
     // New stream order
+    console.log(
+        "================ CREATING NEW STREAM ORDER (CREATE ORDER_1) =================",
+    );
     await streamScheduler.createStreamOrder(
         accounts[1],
         fDaiAddress,
@@ -46,6 +39,9 @@ async function main() {
     );
 
     // Duplicate stream order but should update with new flow rate.
+    console.log(
+        "================ CREATING NEW STREAM ORDER (UPDATE ORDER_1) =================",
+    );
     await streamScheduler.createStreamOrder(
         accounts[1],
         fDaiAddress,
@@ -55,7 +51,10 @@ async function main() {
         "0x",
     );
 
-    // // Stream order with no close time, open indefinitely.
+    // // Stream order with no close time, open indefinitely
+    console.log(
+        "================ CREATING NEW STREAM ORDER (CREATE ORDER_2) =================",
+    );
     await streamScheduler.createStreamOrder(
         accounts[2],
         fDaiAddress,
@@ -66,6 +65,9 @@ async function main() {
     );
 
     // // Stream order with no open time, so should close.
+    console.log(
+        "================ CREATING NEW STREAM ORDER (DELETE ORDER_2) =================",
+    );
     await streamScheduler.createStreamOrder(
         accounts[2],
         fDaiAddress,
@@ -74,70 +76,48 @@ async function main() {
         Math.floor(Date.now() / 1000),
         "0x",
     );
+
+    console.log(
+        "================ CREATING NEW STREAM ORDER (CREATE ORDER_3) =================",
+    );
+    await streamScheduler.createStreamOrder(
+        accounts[3],
+        fDaiAddress,
+        Math.floor(Date.now() / 1000) + 1000,
+        flowRate,
+        0,
+        "0x",
+    );
+
+    console.log(
+        "================ CREATING NEW STREAM ORDER (CREATE ORDER_4) =================",
+    );
+    await streamScheduler.createStreamOrder(
+        accounts[5],
+        fDaiAddress,
+        Math.floor(Date.now() / 1000) + 1000,
+        flowRate + 1000,
+        0,
+        "0x",
+    );
+
+    console.log(
+        "================ CREATING NEW STREAM ORDER (UPDATE ORDER_3) =================",
+    );
+    await streamScheduler.createStreamOrder(
+        accounts[3],
+        fDaiAddress,
+        Math.floor(Date.now() / 1000) + 1000,
+        flowRate + 1000,
+        0,
+        "0x",
+    );
+
     console.log(
         "Length of stream order hashes: ",
         await streamScheduler.getStreamOrderHashesLength(),
     );
-
-    // get past events emitted from contract
-    let events = await streamScheduler.queryFilter(
-        streamScheduler.filters.CreateStreamOrder(),
-        0,
-        "latest",
-    );
-
-    // console.log("================ EXECUTE CREATE STREAM =================");
-
-    // // Call executeCreateStream
-    // await streamScheduler.executeCreateStream(
-    //     accounts[1],
-    //     fDaiAddress,
-    //     // Convert Date.now to seconds
-    //     startTime1,
-    //     flowRate,
-    //     endTime1,
-    //     "0x",
-    // );
-
-    // get past events emitted from contract
-    // events = await streamScheduler.queryFilter(
-    //     streamScheduler.filters.ExecuteCreateStream(),
-    //     latestBlock,
-    //     "latest",
-    // );
-    // console.log("Events:", events);
-    /*
-    msg.sender,
-                    receiver,
-                    superToken,
-                    startTime,
-                    endTime
-    */
-    console.log(
-        "Contract state variable: ",
-        await streamScheduler.streamOrderHashes(
-            ethers.utils.solidityKeccak256(
-                ["address", "address", "address"],
-                [accounts[0], accounts[1], fDaiAddress],
-            ),
-        ),
-    );
 }
-
-const errorHandler = (type, err) => {
-    if (err) console.error("Deploy " + type + " Error: ", err);
-};
-
-const parseEventDataArgs = eventData => {
-    const streamOrderData = {};
-    streamOrderData.receiver = eventData.receiver;
-    streamOrderData.sender = eventData.sender;
-    streamOrderData.superToken = eventData.superToken;
-    streamOrderData.flowRate = eventData.flowRate;
-    streamOrderData.endTime = eventData.endTime;
-    streamOrderData.userData = eventData.userData;
-    return streamOrderData;
-};
 
 main()
     .then(() => process.exit(0))

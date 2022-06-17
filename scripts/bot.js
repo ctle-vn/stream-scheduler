@@ -39,7 +39,18 @@ const parseEventDataArgs = eventData => {
 const parseToDeleteStreamOrder = rows => {
     let streamOrders = [];
     for (let i = 0; i < rows.length; i++) {
-        streamOrders.push([rows[i].event_receiver, rows[i].event_sender]);
+        let streamOrder = {
+            name: rows[i].event_name,
+            receiver: rows[i].event_receiver,
+            sender: rows[i].event_sender,
+            blockNumber: parseInt(rows[i].event_block_number),
+            flowRate: parseInt(rows[i].event_flow_rate),
+            endTime: parseInt(rows[i].event_end_time),
+            startTime: parseInt(rows[i].event_start_time),
+            superToken: rows[i].event_super_token,
+            userData: rows[i].event_user_data,
+        };
+        streamOrders.push(streamOrder);
     }
     return streamOrders;
 };
@@ -47,7 +58,6 @@ const parseToDeleteStreamOrder = rows => {
 async function processStreamOrders(streamScheduler, events) {
     const timeNowInSecs = Math.floor(Date.now() / 1000);
     let streamOrdersToDelete = [];
-    let streamOrdersToUpdateOrCreate = [];
     for (let i = 0; i < events.length; i++) {
         let streamOrderData = parseEventDataArgs(events[i].args);
         let streamOrder = {
@@ -108,10 +118,7 @@ async function processStreamOrders(streamScheduler, events) {
                     streamOrder.endTime,
                     streamOrder.userData,
                 );
-                streamOrdersToDelete.push([
-                    streamOrder.receiver,
-                    streamOrder.sender,
-                ]);
+                streamOrdersToDelete.push(streamOrder);
             } else {
                 console.log("============ EXECUTE UPDATE STREAM ============");
                 // console.log("Detected update stream order: ", streamOrder);
@@ -129,51 +136,26 @@ async function processStreamOrders(streamScheduler, events) {
         }
     }
 
-    // for (let i = 0; i < streamOrdersToUpdateOrCreate.length; i++) {
-    // let streamOrder = streamOrdersToUpdateOrCreate[i];
-    // console.log("Stream order: ", streamOrder);
-    // const shouldCreateStreamOrder = await checkIfStreamOrderExistsInDB(
-    //     streamOrder,
-    // );
-    // // const doesExistOnChain = await checkStreamOrdersOnChain(
-    // //     streamScheduler,
-    // //     streamOrder,
-    // // );
-    // if (shouldCreateStreamOrder) {
-    //     console.log(
-    //         "Did not find sender/receiver pair, creating stream order with stream order: ",
-    //         streamOrder,
-    //     );
-    //     await storeStreamOrdersIntoDB([streamOrder]);
-    //     await streamScheduler.executeCreateStream(
-    //         streamOrder.receiver,
-    //         streamOrder.superToken,
-    //         streamOrder.startTime,
-    //         streamOrder.flowRate,
-    //         streamOrder.endTime,
-    //         streamOrder.userData,
-    //     );
-    // } else {
-    //     console.log(
-    //         "Found sender/receiver pair, updating stream order with stream order: ",
-    //         streamOrder,
-    //     );
-    //     await streamScheduler.executeUpdateStream(
-    //         streamOrder.receiver,
-    //         streamOrder.superToken,
-    //         streamOrder.startTime,
-    //         streamOrder.flowRate,
-    //         streamOrder.endTime,
-    //         streamOrder.userData,
-    //     );
-    //     // Update stream order in database.
-    //     await updateStreamOrderInDB(streamOrder);
-    // }
-    // }
-
     // Delete stream orders that have been closed from the database.
-    streamOrdersToDelete.concat(await getExpiredStreamOrdersFromDB());
+    const expiredStreamOrders = await getExpiredStreamOrdersFromDB();
+    console.log("Found expired stream orders: ", expiredStreamOrders);
+    for (let i = 0; i < expiredStreamOrders.length; i++) {
+        const streamOrder = expiredStreamOrders[i];
+        console.log(
+            "============ EXECUTE DELETE STREAM FOR EXPIRED STREAMS FROM DB ============",
+        );
+        await streamScheduler.executeDeleteStream(
+            streamOrder.receiver,
+            streamOrder.superToken,
+            streamOrder.startTime,
+            streamOrder.flowRate,
+            streamOrder.endTime,
+            streamOrder.userData,
+        );
+    }
+    streamOrdersToDelete.concat(expiredStreamOrders);
     if (streamOrdersToDelete.length > 0) {
+        // TODO: Call executeDeleteStream on these stream orders.
         await deleteStreamOrdersFromDB(streamOrdersToDelete);
     }
 }
@@ -202,7 +184,7 @@ async function deleteStreamOrdersFromDB(streamOrdersToDelete) {
         await client.connect();
         for (let i = 0; i < streamOrdersToDelete.length; i++) {
             const streamOrder = streamOrdersToDelete[i];
-            const query = `DELETE FROM stream_orders WHERE event_receiver = '${streamOrder[0]}' AND event_sender = '${streamOrder[1]}'`;
+            const query = `DELETE FROM stream_orders WHERE event_receiver = '${streamOrder.receiver}' AND event_sender = '${streamOrder.sender}'`;
             await client.query(query);
         }
         console.log("Deleted stream orders from database");
@@ -218,9 +200,13 @@ async function getExpiredStreamOrdersFromDB() {
         connectionString: connectionString,
     });
     const timeNowInSecs = Math.floor(Date.now() / 1000);
-    const sql = `SELECT event_receiver, event_sender
-    FROM stream_orders WHERE event_end_time < $1`;
+    const sql = `SELECT *
+    FROM stream_orders WHERE event_end_time < $1 and event_end_time <> 0`;
     const values = [timeNowInSecs];
+    console.log(
+        "Getting expired stream orders from database that are older than: ",
+        timeNowInSecs,
+    );
 
     try {
         await client.connect();

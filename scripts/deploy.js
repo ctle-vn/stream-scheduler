@@ -14,7 +14,7 @@ const errorHandler = (type, err) => {
 
 const url = "http://localhost:8545";
 const provider = new ethers.providers.JsonRpcProvider(url);
-const flowRate = "1000000000000";
+const flowRate = "100000000000000000000000";
 
 async function deployFrameworkAndTokens() {
     try {
