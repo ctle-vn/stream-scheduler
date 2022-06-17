@@ -4,6 +4,7 @@ BEGIN;
 -- insert some test data if you like
 -- DROP TABLE stream_orders;
 
+-- Maintains active streams.
 CREATE TABLE IF NOT EXISTS stream_orders (
     id serial PRIMARY KEY,
    event_name varchar(100) NOT NULL,
@@ -15,6 +16,12 @@ CREATE TABLE IF NOT EXISTS stream_orders (
    event_start_time numeric(78,0) NOT NULL, -- uint256
    event_super_token varchar(100),
    event_user_data varchar(100)
+);
+
+-- Maintains all stream orders.
+CREATE TABLE IF NOT EXISTS block_numbers (
+    id serial PRIMARY KEY,
+   event_block_number bigint NOT NULL
 );
 
 -- Insert expired stream_order

@@ -1,6 +1,7 @@
 //db stuff
 const pg = require("pg");
 const format = require("pg-format");
+const { max } = require("pg/lib/defaults");
 const connectionString =
     "postgres://postgres:password@localhost:5432/superfluid"; // Docker Postgres DB Connection.
 const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
@@ -57,8 +58,13 @@ const parseToDeleteStreamOrder = rows => {
 
 async function processStreamOrders(streamScheduler, events) {
     const timeNowInSecs = Math.floor(Date.now() / 1000);
+    let maxBlockNumber = 0;
     let streamOrdersToDelete = [];
     for (let i = 0; i < events.length; i++) {
+        maxBlockNumber = Math.max(
+            maxBlockNumber,
+            parseInt(events[i].blockNumber),
+        );
         let streamOrderData = parseEventDataArgs(events[i].args);
         let streamOrder = {
             name: events[i].event,
@@ -135,6 +141,8 @@ async function processStreamOrders(streamScheduler, events) {
             }
         }
     }
+    // Update the latest block number in the db.
+    await updateLatestBlockNumberInDB(maxBlockNumber);
 
     // Delete stream orders that have been closed from the database.
     const expiredStreamOrders = await getExpiredStreamOrdersFromDB();
@@ -157,6 +165,24 @@ async function processStreamOrders(streamScheduler, events) {
     if (streamOrdersToDelete.length > 0) {
         // TODO: Call executeDeleteStream on these stream orders.
         await deleteStreamOrdersFromDB(streamOrdersToDelete);
+    }
+}
+
+async function updateLatestBlockNumberInDB(maxBlockNumber) {
+    const client = new pg.Client({
+        connectionString: connectionString,
+    });
+    try {
+        await client.connect();
+        const query = `INSERT INTO block_numbers (
+                event_block_number
+                ) VALUES (${maxBlockNumber})`;
+        await client.query(query);
+        console.log("Updated latest block number in DB.");
+    } catch (e) {
+        console.log("Error updating latest block number in DB: ", e);
+    } finally {
+        await client.end();
     }
 }
 
@@ -264,7 +290,7 @@ async function getLatestBlockNumberFromDB() {
     const client = new pg.Client({
         connectionString: connectionString,
     });
-    const sql = `SELECT max(event_block_number) as event_block_number FROM stream_orders`;
+    const sql = `SELECT max(event_block_number) as event_block_number FROM block_numbers`;
     try {
         await client.connect();
         const result = await client.query(sql);
