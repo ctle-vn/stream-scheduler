@@ -4,7 +4,11 @@ const format = require("pg-format");
 const { max } = require("pg/lib/defaults");
 const connectionString =
     "postgres://postgres:password@localhost:5432/superfluid"; // Docker Postgres DB Connection.
-const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
+
+// Localhost
+// const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
+// Goerli
+const streamSchedulerAddress = "0x3AE2459DF2b6A1552FC5d66Aec44A396Ba2BAE33";
 
 async function runBot(streamScheduler) {
     // Query the db for the latest block number.
