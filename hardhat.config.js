@@ -16,6 +16,10 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
     }
 });
 
+// Change to deploy to diff environment.
+// const defaultNetwork = 'localhost';
+const defaultNetwork = "goerli";
+
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
@@ -23,8 +27,13 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
+    defaultNetwork,
     solidity: "0.8.13",
     networks: {
+        goerli: {
+            url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+            accounts: [`${process.env.GOERLI_PRIVATE_KEY}`],
+        },
         localhost: {
             url: "http://127.0.0.1:8545/",
             chainId: 31337,

@@ -10,3 +10,4 @@ coverage.json
 abi
 .history/
 .DS_Store
+.env
