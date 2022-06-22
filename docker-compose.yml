@@ -4,7 +4,7 @@ services:
   postgres:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.postgres
     image: postgres
     container_name: posty
     environment:
@@ -15,3 +15,14 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+  cron:
+    container_name: cron
+    build:
+      context: .
+      dockerfile: Dockerfile.cron
+    restart: unless-stopped
+    network_mode: host
+    volumes: 
+      - .:/app
+      - ./node_modules
+      - ./contracts:/app/tmp/contracts
