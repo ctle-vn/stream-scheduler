@@ -10,8 +10,6 @@ import { CFAv1Library } from "@superfluid-finance/ethereum-contracts/contracts/a
  * @author Superfluid
  */
 contract StreamScheduler {
-    IConstantFlowAgreementV1 public _cfa;
-    ISuperfluid public _host; // host
     mapping(bytes32 => bool) public streamOrderHashes;
     uint256 public streamOrderLength;
 
@@ -19,12 +17,9 @@ contract StreamScheduler {
     CFAv1Library.InitData public cfaV1; //initialize cfaV1 variable
 
     constructor(IConstantFlowAgreementV1 cfa, ISuperfluid host) {
-        _cfa = cfa;
-        _host = host;
-        streamOrderLength = 0;
         // Check cfa and host address to be non zero.
-        assert(address(_host) != address(0));
-        assert(address(_cfa) != address(0));
+        assert(address(host) != address(0));
+        assert(address(cfa) != address(0));
 
         //initialize InitData struct, and set equal to cfaV1
         cfaV1 = CFAv1Library.InitData(host, cfa);
@@ -184,21 +179,19 @@ contract StreamScheduler {
                 (startTime != 0 && endTime == 0),
             "Stream time window is invalid."
         );
-
+        bytes32 streamHashId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                receiver,
+                superToken,
+                startTime,
+                endTime,
+                flowRate
+            )
+        );
         // Check if hash exists first.
         require(
-            streamOrderHashes[
-                keccak256(
-                    abi.encodePacked(
-                        msg.sender,
-                        receiver,
-                        superToken,
-                        startTime,
-                        endTime,
-                        flowRate
-                    )
-                )
-            ],
+            streamOrderHashes[streamHashId],
             "Stream order does not exist."
         );
 
@@ -211,18 +204,7 @@ contract StreamScheduler {
             ),
             new bytes(0)
         );
-        delete streamOrderHashes[
-            keccak256(
-                abi.encodePacked(
-                    msg.sender,
-                    receiver,
-                    superToken,
-                    startTime,
-                    endTime,
-                    flowRate
-                )
-            )
-        ];
+        delete streamOrderHashes[streamHashId];
         streamOrderLength--;
         emit ExecuteCreateStream(
             receiver,
@@ -259,20 +241,19 @@ contract StreamScheduler {
                 (startTime != 0 && endTime == 0),
             "Stream time window is invalid."
         );
+        bytes32 streamHashId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                receiver,
+                superToken,
+                startTime,
+                endTime,
+                flowRate
+            )
+        );
         // Will work exactly as the create version, except this should be used if a stream already exists,
         require(
-            streamOrderHashes[
-                keccak256(
-                    abi.encodePacked(
-                        msg.sender,
-                        receiver,
-                        superToken,
-                        startTime,
-                        endTime,
-                        flowRate
-                    )
-                )
-            ],
+            streamOrderHashes[streamHashId],
             "Stream order does not exist."
         );
         // and will update the flowRate of the stream to match the stream order data.
@@ -284,18 +265,7 @@ contract StreamScheduler {
             ),
             new bytes(0)
         );
-        delete streamOrderHashes[
-            keccak256(
-                abi.encodePacked(
-                    msg.sender,
-                    receiver,
-                    superToken,
-                    startTime,
-                    endTime,
-                    flowRate
-                )
-            )
-        ];
+        delete streamOrderHashes[streamHashId];
         streamOrderLength--;
         emit ExecuteUpdateStream(
             receiver,
@@ -336,20 +306,18 @@ contract StreamScheduler {
             endTime != 0,
             "Stream order end time should not be 0."
         );
-
+        bytes32 streamHashId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                receiver,
+                superToken,
+                startTime,
+                endTime,
+                flowRate
+            )
+        );
         require(
-            streamOrderHashes[
-                keccak256(
-                    abi.encodePacked(
-                        msg.sender,
-                        receiver,
-                        superToken,
-                        startTime,
-                        endTime,
-                        flowRate
-                    )
-                )
-            ],
+            streamOrderHashes[streamHashId],
             "Stream order does not exist."
         );
         cfaV1.host.callAgreement(
@@ -360,18 +328,7 @@ contract StreamScheduler {
             ),
             new bytes(0)
         );
-        delete streamOrderHashes[
-            keccak256(
-                abi.encodePacked(
-                    msg.sender,
-                    receiver,
-                    superToken,
-                    startTime,
-                    endTime,
-                    flowRate
-                )
-            )
-        ];
+        delete streamOrderHashes[streamHashId];
         streamOrderLength--;
         emit ExecuteDeleteStream(
             receiver,
