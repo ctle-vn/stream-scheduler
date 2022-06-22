@@ -17,7 +17,6 @@ contract StreamScheduler {
     CFAv1Library.InitData public cfaV1; //initialize cfaV1 variable
 
     constructor(IConstantFlowAgreementV1 cfa, ISuperfluid host) {
-        streamOrderLength = 0;
         // Check cfa and host address to be non zero.
         assert(address(host) != address(0));
         assert(address(cfa) != address(0));
