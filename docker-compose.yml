@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile.postgres
     image: postgres
+    network_mode: bridge
     container_name: posty
     environment:
       POSTGRES_DB: superfluid
@@ -15,14 +16,24 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
-  cron:
-    container_name: cron
-    build:
-      context: .
-      dockerfile: Dockerfile.cron
-    restart: unless-stopped
-    network_mode: host
-    volumes: 
-      - .:/app
-      - ./node_modules
-      - ./contracts:/app/tmp/contracts
+  # bot:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.bot
+  #   # run bot_cron.sh script every minute
+  #   command: npx hardhat run --network localhost ./scripts/bot.js
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     - PGHOST=postgres
+  #     - PGUSER=postgres
+  #     - PGDATABASE=superfluid
+  #     - PGPASSWORD=password
+  #     - PGPORT=5432
+  #   volumes:
+  #     # Maps our current project directory `.` to
+  #     # our working directory in the container
+  #     - ./:/usr/src/app/
+  #     # node_modules workaround for volumes
+  #     # https://stackoverflow.com/a/32785014
+  #     - /usr/src/app/node_modules

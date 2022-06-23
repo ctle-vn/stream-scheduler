@@ -1,10 +1,16 @@
 //db stuff
 const pg = require("pg");
+const config = require("dotenv").config;
+// Config
+config();
+const ethers = require("ethers");
 const format = require("pg-format");
-const { max } = require("pg/lib/defaults");
-const connectionString =
-    "postgres://postgres:password@localhost:5432/superfluid"; // Docker Postgres DB Connection.
+const connectionString = `postgres://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`; // Docker Postgres DB Connection.
+console.log("Connection string: ", connectionString);
 const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
+
+const abi =
+    require("../artifacts/contracts/StreamScheduler.sol/StreamScheduler.json").abi;
 
 async function runBot(streamScheduler) {
     // Query the db for the latest block number.
@@ -386,9 +392,18 @@ async function insertStreamOrdersIntoDB(streamOrderList) {
 }
 
 async function main() {
-    const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
-    const streamScheduler = await StreamScheduler.attach(
+    // const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
+    // const streamScheduler = await StreamScheduler.attach(
+    //     streamSchedulerAddress,
+    // );
+    const provider = new ethers.ethers.providers.JsonRpcProvider();
+    const signer = provider.getSigner(
+        "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", // localhost adress[0]
+    );
+    const streamScheduler = new ethers.ethers.Contract(
         streamSchedulerAddress,
+        abi,
+        signer,
     );
     await runBot(streamScheduler);
 }
