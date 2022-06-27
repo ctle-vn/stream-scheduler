@@ -1,9 +1,12 @@
-//db stuff
 const pg = require("pg");
+const config = require("dotenv").config;
+// Config
+config();
+const ethers = require("ethers");
 const format = require("pg-format");
-const { max } = require("pg/lib/defaults");
 const connectionString = `postgres://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`; // Docker Postgres DB Connection.
-
+const abi =
+    require("../artifacts/contracts/StreamScheduler.sol/StreamScheduler.json").abi;
 // Localhost
 // const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
 // Goerli
@@ -389,9 +392,20 @@ async function insertStreamOrdersIntoDB(streamOrderList) {
 }
 
 async function main() {
-    const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
-    const streamScheduler = await StreamScheduler.attach(
+    // const StreamScheduler = await ethers.getContractFactory("StreamScheduler");
+    // const streamScheduler = await StreamScheduler.attach(
+    //     streamSchedulerAddress,
+    // );
+    const provider = new ethers.providers.JsonRpcProvider(
+        `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+    );
+    const signer = provider.getSigner(
+        "0x3d706364AaFC2cbB0D440FfB4AfFf78e9A21e0cF",
+    );
+    const streamScheduler = new ethers.ethers.Contract(
         streamSchedulerAddress,
+        abi,
+        signer,
     );
     await runBot(streamScheduler);
 }
