@@ -323,11 +323,19 @@ async function getLatestBlockNumberFromDB() {
 }
 
 async function getPastEventsFromContract(streamScheduler, latestBlockNumber) {
-    return await streamScheduler.queryFilter(
-        streamScheduler.filters.CreateStreamOrder(),
+    console.log(
+        "Getting past events from contract, latest block number: ",
         latestBlockNumber,
-        "latest",
     );
+    try {
+        return await streamScheduler.queryFilter(
+            streamScheduler.filters.CreateStreamOrder(),
+            latestBlockNumber,
+            "latest",
+        );
+    } catch (error) {
+        console.log("Error getting past events from contract, error: ", error);
+    }
 }
 
 async function storeStreamOrdersIntoDB(events) {
