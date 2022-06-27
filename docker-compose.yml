@@ -4,9 +4,9 @@ services:
   postgres:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.postgres
     image: postgres
-    container_name: posty
+    container_name: postgres
     environment:
       POSTGRES_DB: superfluid
       POSTGRES_USER: postgres
@@ -14,4 +14,32 @@ services:
       POSTGRES_PORT: 5432
     ports:
       - "5432:5432"
+    networks:
+      - postgres
     restart: unless-stopped
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    # run bot_cron.sh script every minute
+    command: node ./scripts/bot.js
+    depends_on:
+      - postgres
+    networks: 
+      - postgres
+    environment:
+      - PGHOST=postgres
+      - PGUSER=postgres
+      - PGDATABASE=superfluid
+      - PGPASSWORD=password
+      - PGPORT=5432
+    volumes:
+      # Maps our current project directory `.` to
+      # our working directory in the container
+      - ./:/usr/src/app/
+      # node_modules workaround for volumes
+      # https://stackoverflow.com/a/32785014
+      - /usr/src/app/node_modules
+networks:
+  postgres:
+    driver: bridge

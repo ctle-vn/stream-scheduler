@@ -2,8 +2,7 @@
 const pg = require("pg");
 const format = require("pg-format");
 const { max } = require("pg/lib/defaults");
-const connectionString =
-    "postgres://postgres:password@localhost:5432/superfluid"; // Docker Postgres DB Connection.
+const connectionString = `postgres://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`; // Docker Postgres DB Connection.
 
 // Localhost
 // const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
