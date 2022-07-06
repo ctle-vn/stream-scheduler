@@ -6,18 +6,19 @@ const connectionString =
     "postgres://postgres:password@localhost:5432/superfluid"; // Docker Postgres DB Connection.
 const streamSchedulerAddress = "0x4A679253410272dd5232B3Ff7cF5dbB88f295319";
 
+const BlockIncrement = 1000;
+
 async function runBot(streamScheduler) {
     // Query the db for the latest block number.
-    const latestBlockNumber = await getLatestBlockNumberFromDB();
-    console.log("Latest Block Number: ", latestBlockNumber);
+    const latestBlockNumberFromDB = await getLatestBlockNumberFromDB();
+    console.log("Latest Block Number: ", latestBlockNumberFromDB);
 
     // Use this block number as the "from" parameter and get all past events from the contract.
     const pastEvents = await getPastEventsFromContract(
         streamScheduler,
-        latestBlockNumber,
+        latestBlockNumberFromDB,
     );
     console.log("Retrieved past Events, count: ", pastEvents.length);
-
     // Loop through the events and check differentiate the diff types of stream orders.
     await processStreamOrders(streamScheduler, pastEvents);
 
@@ -317,11 +318,25 @@ async function getLatestBlockNumberFromDB() {
 }
 
 async function getPastEventsFromContract(streamScheduler, latestBlockNumber) {
-    return await streamScheduler.queryFilter(
-        streamScheduler.filters.CreateStreamOrder(),
-        latestBlockNumber,
-        "latest",
-    );
+    const latestNetworkBlockNumber = await ethers.provider.getBlockNumber();
+    const events = [];
+    while(latestBlockNumber < latestNetworkBlockNumber) {
+        const blockEvents = await streamScheduler.queryFilter(
+            streamScheduler.filters.CreateStreamOrder(),
+            latestBlockNumber,
+            latestBlockNumber + BlockIncrement,
+        );
+        events.push(...blockEvents);
+        latestBlockNumber += BlockIncrement;
+    }
+    //get the latest events of the network
+    if(latestBlockNumber < await ethers.provider.getBlockNumber()) {
+        events.push(...await streamScheduler.queryFilter(streamScheduler.filters.CreateStreamOrder(),
+            latestBlockNumber,
+            "latest",
+        ));
+    }
+    return events;
 }
 
 async function storeStreamOrdersIntoDB(events) {
